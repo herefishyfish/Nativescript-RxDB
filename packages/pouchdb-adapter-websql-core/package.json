@@ -1,0 +1,61 @@
+{
+  "_from": "@craftzdog/pouchdb-adapter-websql-core@^7.2.3",
+  "_id": "@craftzdog/pouchdb-adapter-websql-core@7.2.3",
+  "_inBundle": false,
+  "_integrity": "sha512-bXt9rOwMgUEyQhcr8KWDAhOA1J7XfI//mrlEg0O3KQo81Ck5i6oxWU+BYpw9wC2pnKmhboRkIwFAz9QQbHefrg==",
+  "_location": "/@craftzdog/pouchdb-adapter-websql-core",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "@craftzdog/pouchdb-adapter-websql-core@^7.2.3",
+    "name": "@craftzdog/pouchdb-adapter-websql-core",
+    "escapedName": "@craftzdog%2fpouchdb-adapter-websql-core",
+    "scope": "@craftzdog",
+    "rawSpec": "^7.2.3",
+    "saveSpec": null,
+    "fetchSpec": "^7.2.3"
+  },
+  "_requiredBy": [
+    "/pouchdb-adapter-react-native-sqlite"
+  ],
+  "_resolved": "https://registry.npmjs.org/@craftzdog/pouchdb-adapter-websql-core/-/pouchdb-adapter-websql-core-7.2.3.tgz",
+  "_shasum": "01ebaaf71dd7b844c66c58ae8cc460ec3aeb8009",
+  "_spec": "@craftzdog/pouchdb-adapter-websql-core@^7.2.3",
+  "_where": "C:\\Users\\Dylan\\Documents\\code\\nsrxdb\\node_modules\\pouchdb-adapter-react-native-sqlite",
+  "author": {
+    "name": "Dale Harvey",
+    "email": "dale@arandomurl.com"
+  },
+  "bugs": {
+    "url": "https://github.com/pouchdb/pouchdb/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "pouchdb-adapter-utils": "^7.2.2",
+    "pouchdb-binary-utils": "^7.2.2",
+    "pouchdb-collections": "^7.2.2",
+    "pouchdb-errors": "^7.2.2",
+    "pouchdb-json": "^7.2.2",
+    "pouchdb-merge": "^7.2.2",
+    "pouchdb-utils": "^7.2.2"
+  },
+  "deprecated": false,
+  "description": "Underlying adapter code for WebSQL and SQLite-based PouchDB adapters.",
+  "files": [
+    "src",
+    "dist",
+    "tonic-example.js"
+  ],
+  "homepage": "https://github.com/pouchdb/pouchdb#readme",
+  "keywords": [],
+  "license": "Apache-2.0",
+  "main": "./src/index.js",
+  "module": "./lib/index.es.js",
+  "name": "@craftzdog/pouchdb-adapter-websql-core",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pouchdb/pouchdb.git"
+  },
+  "version": "7.2.3"
+}

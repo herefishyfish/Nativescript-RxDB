@@ -1,18 +1,30 @@
-import { Component, OnInit } from '@angular/core'
-
-import { Item } from './item'
-import { ItemService } from './item.service'
+import { AfterViewInit, Component, OnInit } from '@angular/core'
+import { isAndroid } from '@nativescript/core';
+import { DatabaseService, initDatabase } from '../cores/services/database.service'
 
 @Component({
   selector: 'ns-items',
   templateUrl: './items.component.html',
 })
-export class ItemsComponent implements OnInit {
-  items: Array<Item>
+export class ItemsComponent {
+  constructor(public databaseService: DatabaseService) {
+    initDatabase();
+  }
 
-  constructor(private itemService: ItemService) {}
+  uuid() {
+    if( isAndroid ) {
+      return java.util.UUID.randomUUID().toString();
+    } else {
+      return NSUUID.UUID().UUIDString.toLowerCase();
+    }
+  }
 
-  ngOnInit(): void {
-    this.items = this.itemService.getItems()
+  addHero() {
+    this.databaseService.db.hero.insert({ "id": this.uuid(), name: 'SPODERMEN' } as any);
+    this.databaseService.db.hero.$
+      .subscribe(ev => {
+      console.log('hero collection.$ emitted:' );
+      console.dir(ev);
+    });
   }
 }
