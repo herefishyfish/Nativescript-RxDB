@@ -5,6 +5,7 @@ import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { ItemsComponent } from './item/items.component'
 import { DatabaseService, initDatabase } from './cores/services/database.service'
+import { SubscriptionService } from './cores/services/subscription.service'
 
 @NgModule({
   bootstrap: [AppComponent],
@@ -17,7 +18,7 @@ import { DatabaseService, initDatabase } from './cores/services/database.service
     //   multi: true,
     //   deps: []
     // },
-  DatabaseService],
+  DatabaseService, SubscriptionService],
   schemas: [NO_ERRORS_SCHEMA],
 })
 export class AppModule {}

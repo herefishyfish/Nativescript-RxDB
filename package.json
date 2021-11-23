@@ -1,7 +1,7 @@
 {
   "name": "nsrxdb",
   "main": "./src/main.ts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "dependencies": {
     "@angular/animations": "^12.2.0",
@@ -15,12 +15,14 @@
     "@craftzdog/pouchdb-binary-utils-react-native": "^7.2.4",
     "@craftzdog/pouchdb-core-react-native": "^7.2.2",
     "@craftzdog/pouchdb-replication-react-native": "^7.0.0",
+    "@master.technology/websockets": "^2.0.3",
     "@nativescript-community/sqlite": "^3.4.0",
     "@nativescript/angular": "^12.2.0",
     "@nativescript/core": "~8.1.1",
     "@nativescript/theme": "~3.0.1",
     "assert": "^2.0.0",
     "base-64": "^1.0.0",
+    "browser-assert": "^1.2.1",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
@@ -41,6 +43,7 @@
     "subscriptions-transport-ws": "^0.9.19",
     "tslib": "^2.0.0",
     "tty-browserify": "0.0.1",
+    "util": "^0.12.4",
     "vm-browserify": "^1.1.2",
     "zone.js": "~0.11.4"
   },

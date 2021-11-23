@@ -17,20 +17,21 @@ module.exports = (env) => {
         fs: require.resolve('@nativescript/core/'),
         module: require.resolve('@nativescript/core/'),
         path: require.resolve('@nativescript/core/'),
-        // assert: require.resolve("assert/"),
-        // buffer: require.resolve("buffer/"),
-        // events: require.resolve("events/"),
+        assert: require.resolve("browser-assert"),
+        buffer: require.resolve("buffer/"),
+        events: require.resolve("events/"),
         // tty: require.resolve("tty-browserify"),
-        // process: require.resolve('process/browser'),
+        process: require.resolve('process/browser'),
         os: require.resolve('os-browserify/browser'),
         stream: require.resolve('stream-browserify'),
-        // util: require.resolve("util/"),
+        util: require.resolve("util/"),
         // url: require.resolve('url/'),
         // BroadcastChannel: false,
         crypto: require.resolve('crypto-browserify'),
         // // crypto: require.resolve('../libs/crypto/crypto-browserify.js'),
         // ws: require.resolve('@master.technology/websockets'),
-        zlib: require.resolve('browserify-zlib'),
+        zlib: false,
+        // zlib: require.resolve('browserify-zlib'),
         http: require.resolve('stream-http'),
         https: require.resolve('https-browserify'),
         vm: require.resolve('vm-browserify'),
@@ -45,10 +46,10 @@ module.exports = (env) => {
       'pouchdb-binary-utils',
       '@craftzdog/pouchdb-binary-utils-react-native'
     );
-    config.resolve.alias.set(
-      'pouchdb-core',
-      '@craftzdog/pouchdb-core-react-native'
-    );
+    // config.resolve.alias.set(
+    //   'pouchdb-core',
+    //   '@craftzdog/pouchdb-core-react-native'
+    // );
     // config.resolve.alias.set('crypto', 'crypto-browserify');
 
     config
@@ -68,9 +69,10 @@ module.exports = (env) => {
 
     config.plugin('DefinePlugin').tap((args) => {
       Object.assign(args[0], {
-        'process.env.NODE_DEBUG': false,
+        "process": "global.process",
         'process.platform': JSON.stringify('nativescript'),
         'process.env': 'global',
+        'process.env.NODE_DEBUG': false,
         'process.version': JSON.stringify('0.0.0'),
         'process.browser': true,
       });

@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core'
-import { isAndroid } from '@nativescript/core';
+import { Dialogs, isAndroid } from '@nativescript/core';
 import { DatabaseService, initDatabase } from '../cores/services/database.service'
 
 @Component({
@@ -20,11 +20,6 @@ export class ItemsComponent {
   }
 
   addHero() {
-    this.databaseService.db.hero.insert({ "id": this.uuid(), name: 'SPODERMEN' } as any);
-    this.databaseService.db.hero.$
-      .subscribe(ev => {
-      console.log('hero collection.$ emitted:' );
-      console.dir(ev);
-    });
+    this.databaseService.db.hero.insert({ "id": this.uuid(), name: 'SPODERMEN', color: 'blue' } as any);
   }
 }

@@ -14,7 +14,7 @@ import {
 // The goal is to never actually insert the \u0000 character
 // in the database.
 function escapeBlob(str) {
-  console.log('utils escapeBlob');
+  console.log("[pdb-utils]","escapeBlob")
   /* eslint-disable no-control-regex */
   return str
     .replace(/\u0002/g, '\u0002\u0002')
@@ -24,7 +24,7 @@ function escapeBlob(str) {
 }
 
 function unescapeBlob(str) {
-  console.log('utils unescapeBlob');
+  console.log("[pdb-utils]","unescapeBlob")
   /* eslint-disable no-control-regex */
   return str
     .replace(/\u0001\u0001/g, '\u0000')
@@ -34,16 +34,18 @@ function unescapeBlob(str) {
 }
 
 function stringifyDoc(doc) {
-  console.log('utils stringifyDoc');
+  console.log("[pdb-utils]","stringifyDoc")
   // don't bother storing the id/rev. it uses lots of space,
   // in persistent map/reduce especially
   delete doc._id;
   delete doc._rev;
-  return JSON.stringify(doc);
+  const res = JSON.stringify(doc);
+  console.log(res);
+  return res;
 }
 
 function unstringifyDoc(doc, id, rev) {
-  console.log('utils unstringifyDoc');
+  console.log("[pdb-utils]","unstringifyDoc")
   doc = JSON.parse(doc);
   doc._id = id;
   doc._rev = rev;
@@ -52,7 +54,7 @@ function unstringifyDoc(doc, id, rev) {
 
 // question mark groups IN queries, e.g. 3 -> '(?,?,?)'
 function qMarks(num) {
-  console.log('utils qMarks');
+  console.log("[pdb-utils]","qMarks")
   var s = '(';
   while (num--) {
     s += '?';
@@ -63,8 +65,18 @@ function qMarks(num) {
   return s + ')';
 }
 
+function uuid() {
+  console.log("[pdb-utils]","uuid")
+  if( isAndroid ) {
+    console.log('uuid');
+    return java.util.UUID.randomUUID().toString();
+  } else {
+    return NSUUID.UUID().UUIDString.toLowerCase();
+  }
+}
+
 function select(selector, table, joiner, where, orderBy) {
-  console.log('utils select');
+  console.log("[pdb-utils]","select")
   return 'SELECT ' + selector + ' FROM ' +
     (typeof table === 'string' ? table : table.join(' JOIN ')) +
     (joiner ? (' ON ' + joiner) : '') +
@@ -74,7 +86,7 @@ function select(selector, table, joiner, where, orderBy) {
 }
 
 function compactRevs(revs, docId, tx) {
-  console.log('utils compactRevs');
+  console.log("[pdb-utils]","compactRevs")
 
   if (!revs.length) {
     return;
@@ -85,7 +97,9 @@ function compactRevs(revs, docId, tx) {
 
   function checkDone() {
     if (++numDone === revs.length) { // done
-      deleteOrphans();
+      setTimeout(() => {
+        deleteOrphans();
+      }, 0);
     }
   }
 
@@ -99,11 +113,11 @@ function compactRevs(revs, docId, tx) {
     var sql = 'SELECT DISTINCT digest AS digest FROM ' +
       ATTACH_AND_SEQ_STORE + ' WHERE seq IN ' + qMarks(seqs.length);
 
-    tx.executeSql(sql, seqs, function (tx, res) {
+    db.select(sql, seqs).then((res) => {
 
       var digestsToCheck = [];
-      for (var i = 0; i < res.rows.length; i++) {
-        digestsToCheck.push(res.rows.item(i).digest);
+      for (var i = 0; i < res.length; i++) {
+        digestsToCheck.push(res[i].digest);
       }
       if (!digestsToCheck.length) {
         return;
@@ -113,25 +127,25 @@ function compactRevs(revs, docId, tx) {
         ' WHERE seq IN (' +
         seqs.map(function () { return '?'; }).join(',') +
         ')';
-      tx.executeSql(sql, seqs, function (tx) {
+      db.execute(sql, seqs).then(() => {
 
         var sql = 'SELECT digest FROM ' + ATTACH_AND_SEQ_STORE +
           ' WHERE digest IN (' +
           digestsToCheck.map(function () { return '?'; }).join(',') +
           ')';
-        tx.executeSql(sql, digestsToCheck, function (tx, res) {
+        db.select(sql, digestsToCheck).then((res) => {
           var nonOrphanedDigests = new Set();
-          for (var i = 0; i < res.rows.length; i++) {
-            nonOrphanedDigests.add(res.rows.item(i).digest);
+          for (var i = 0; i < res.length; i++) {
+            nonOrphanedDigests.add(res[i].digest);
           }
           digestsToCheck.forEach(function (digest) {
             if (nonOrphanedDigests.has(digest)) {
               return;
             }
-            tx.executeSql(
+            db.execute(
               'DELETE FROM ' + ATTACH_AND_SEQ_STORE + ' WHERE digest=?',
               [digest]);
-            tx.executeSql(
+            db.execute(
               'DELETE FROM ' + ATTACH_STORE + ' WHERE digest=?', [digest]);
           });
         });
@@ -144,21 +158,21 @@ function compactRevs(revs, docId, tx) {
     var sql = 'SELECT seq FROM ' + BY_SEQ_STORE +
       ' WHERE doc_id=? AND rev=?';
 
-    tx.executeSql(sql, [docId, rev], function (tx, res) {
-      if (!res.rows.length) { // already deleted
+    db.select(sql, [docId, rev]).then((res) => {
+      if (!res.length) { // already deleted
         return checkDone();
       }
-      var seq = res.rows.item(0).seq;
+      var seq = res[0].seq;
       seqs.push(seq);
 
-      tx.executeSql(
-        'DELETE FROM ' + BY_SEQ_STORE + ' WHERE seq=?', [seq], checkDone);
+      db.execute(
+        'DELETE FROM ' + BY_SEQ_STORE + ' WHERE seq=?', [seq]).then(checkDone);
     });
   });
 }
 
 function websqlError(callback) {
-  console.log('utils websqlError');
+  console.log('websqlError!');
   return function (event) {
     guardedConsole('error', 'WebSQL threw an error', event);
     // event may actually be a SQLError object, so report is as such
@@ -171,7 +185,7 @@ function websqlError(callback) {
 }
 
 function getSize(opts) {
-  console.log('utils getSize');
+  console.log("[pdb-utils]","getSize")
   if ('size' in opts) {
     // triggers immediate popup in iOS, fixes #2347
     // e.g. 5000001 asks for 5 MB, 10000001 asks for 10 MB,
@@ -183,20 +197,7 @@ function getSize(opts) {
   // In Android <=4.3, this value is actually used as an
   // honest-to-god ceiling for data, so we need to
   // set it to a decently high number.
-  // var isAndroid = typeof navigator !== 'undefined' &&
-  //   /Android/.test(navigator.userAgent);
   return isAndroid ? 5000000 : 1; // in PhantomJS, if you use 0 it will crash
-}
-
-function uuid() {
-  console.log('utils uuid');
-  console.log("[pdb-utils]","uuid")
-  if( isAndroid ) {
-    console.log('uuid');
-    return java.util.UUID.randomUUID().toString();
-  } else {
-    return NSUUID.UUID().UUIDString.toLowerCase();
-  }
 }
 
 export {
@@ -206,8 +207,8 @@ export {
   unstringifyDoc,
   qMarks,
   select,
-  uuid,
   compactRevs,
   getSize,
-  websqlError
+  websqlError,
+  uuid,
 };

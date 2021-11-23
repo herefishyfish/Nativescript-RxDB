@@ -3,12 +3,14 @@ import { platformNativeScript, runNativeScriptAngularApp } from '@nativescript/a
 import { AppModule } from './app/app.module';
 
 import { decode, encode } from 'base-64';
-import { initDatabase } from './app/cores/services/database.service';
+// import { initDatabase } from './app/cores/services/database.service';
 
+// global.process = require("process/browser");
+// global.process.nextTick = function (cb) { setTimeout(cb, 0) };
 global.process = {
   nextTick: function (cb) { setTimeout(cb, 0) },
   platform: "Nativescript",
-  version: "v0.0.1",
+  version: "v0.0.0",
   browser: true,
 } as any;
 
