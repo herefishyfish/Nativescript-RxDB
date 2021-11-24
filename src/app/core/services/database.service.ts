@@ -1,4 +1,4 @@
-import { Injectable, isDevMode } from '@angular/core';
+import { Injectable, isDevMode, NgZone, OnInit } from '@angular/core';
 
 // import typings
 /**
@@ -170,7 +170,7 @@ export const getPullQuery = () => {
 };
 
 const hasuraProject = 'working-oriole-73.hasura.app/v1/graphql';
-
+let replicationState;
 /**
  * Loads RxDB plugins
  */
@@ -241,7 +241,7 @@ async function _create(): Promise<RxHeroesDatabase> {
 
   console.log('DatabaseService: Create replicator..');
   console.log('https://' + hasuraProject);
-  const replicationState = db.hero.syncGraphQL({
+  replicationState = db.hero.syncGraphQL({
     url: 'https://' + hasuraProject,
     headers: {
       'x-hasura-admin-secret':
@@ -281,55 +281,7 @@ async function _create(): Promise<RxHeroesDatabase> {
     console.log('Received:', doc);
   });
 
-  const endpointUrl = 'wss://' + hasuraProject;
-  console.log(endpointUrl);
-  console.log('Database service: Create websocket');
-  const wsClient = sub.getWSClient(
-    endpointUrl,
-    {
-      lazy: true,
-      reconnect: true,
-      connectionParams: async () => {
-        return {
-          headers: {
-            'x-hasura-admin-secret':
-              '2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE',
-          },
-        };
-      },
-      reconnectionAttempts: 999,
-    },
-    WebSocket
-  ) as any;
 
-  const query = `
-  subscription HeroSubscription {
-    hero {
-      name
-      id
-      updatedAt
-      deleted
-      color
-    }
-  }
-  `;
-
-  console.log('Database service: request subscription.');
-  const ret = wsClient.request({
-    query,
-  });
-  ret.subscribe({
-    next: async (data) => {
-      console.log('subscription emitted => trigger run()');
-      console.dir(data);
-      await replicationState.run(true);
-      console.log('run() done');
-    },
-    error(error) {
-      console.log('run() got error:');
-      console.dir(error);
-    },
-  });
 
   // log all collection events for debugging
   db.hero.$.pipe(filter((ev: any) => !ev.isLocal)).subscribe((ev) => {
@@ -363,12 +315,66 @@ export async function initDatabase() {
 }
 
 @Injectable()
-export class DatabaseService {
-  constructor(private subscriptionService: SubscriptionService) {
+export class DatabaseService implements OnInit {
+  constructor(private subscriptionService: SubscriptionService, private zone: NgZone) {
     sub = subscriptionService;
   }
 
   get db(): RxHeroesDatabase {
     return DB_INSTANCE;
+  }
+
+  ngOnInit() {
+    const endpointUrl = 'wss://' + hasuraProject;
+    console.log(endpointUrl);
+    console.log('Database service: Create websocket');
+    const wsClient = this.subscriptionService.getWSClient(
+      endpointUrl,
+      {
+        lazy: true,
+        reconnect: true,
+        connectionParams: async () => {
+          return {
+            headers: {
+              'x-hasura-admin-secret':
+                '2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE',
+            },
+          };
+        },
+        reconnectionAttempts: 999,
+      },
+      WebSocket
+    ) as any;
+
+    const query = `
+    subscription HeroSubscription {
+      hero {
+        name
+        id
+        updatedAt
+        deleted
+        color
+      }
+    }
+    `;
+
+    console.log('Database service: request subscription.');
+    this.zone.runOutsideAngular(() => {
+    const ret = wsClient.request({
+      query,
+    });
+    ret.subscribe({
+      next: async (data) => {
+        console.log('subscription emitted => trigger run()');
+        console.dir(data);
+        await replicationState.run(true);
+          // console.log('run() done');
+        },
+        error(error) {
+          console.log('run() got error:');
+          console.dir(error);
+        },
+      });
+    });
   }
 }

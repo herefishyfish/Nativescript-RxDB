@@ -4,8 +4,8 @@ import { NativeScriptModule } from '@nativescript/angular'
 import { AppRoutingModule } from './app-routing.module'
 import { AppComponent } from './app.component'
 import { ItemsComponent } from './item/items.component'
-import { DatabaseService, initDatabase } from './cores/services/database.service'
-import { SubscriptionService } from './cores/services/subscription.service'
+import { DatabaseService, initDatabase } from './core/services/database.service'
+import { SubscriptionService } from './core/services/subscription.service'
 
 @NgModule({
   bootstrap: [AppComponent],

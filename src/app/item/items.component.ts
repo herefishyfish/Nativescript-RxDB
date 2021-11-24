@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core'
 import { Dialogs, isAndroid } from '@nativescript/core';
-import { DatabaseService, initDatabase } from '../cores/services/database.service'
+import { DatabaseService, initDatabase } from '../core/services/database.service'
 
 @Component({
   selector: 'ns-items',

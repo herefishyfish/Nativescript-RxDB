@@ -42,10 +42,10 @@ module.exports = (env) => {
       'pouchdb-md5',
       path.resolve(__dirname, './packages/pouchdb-md5')
     );
-    config.resolve.alias.set(
-      'pouchdb-binary-utils',
-      '@craftzdog/pouchdb-binary-utils-react-native'
-    );
+    // config.resolve.alias.set(
+    //   'pouchdb-binary-utils',
+    //   '@craftzdog/pouchdb-binary-utils-react-native'
+    // );
     // config.resolve.alias.set(
     //   'pouchdb-core',
     //   '@craftzdog/pouchdb-core-react-native'

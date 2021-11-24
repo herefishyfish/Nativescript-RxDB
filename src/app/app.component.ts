@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core'
-import { DatabaseService } from './cores/services/database.service';
+import { DatabaseService } from './core/services/database.service';
 @Component({
   selector: 'ns-app',
   templateUrl: './app.component.html',

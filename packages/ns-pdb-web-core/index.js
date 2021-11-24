@@ -542,7 +542,7 @@ function WebSqlPouch(opts, callback) {
 
       console.log('transaction')
     })
-    // .catch(websqlError(callback))
+    .catch(websqlError(callback))
     .then(() => {
       console.log('creating db')
       dbCreated();
@@ -591,7 +591,7 @@ function WebSqlPouch(opts, callback) {
     });
   }
 
-  async function countDocs(tx, callback) {
+  function countDocs(tx, callback) {
     console.log("[pdb-index]", "countDocs" );
     // count the total rows
     var sql = select(
@@ -601,9 +601,11 @@ function WebSqlPouch(opts, callback) {
       BY_SEQ_STORE + '.deleted=0');
 
     // callback((await DATABASE.select(sql))[0].num);
-    db.select(sql).then((result) => {
-      console.log('result[0]', result);
-      callback(result[0].num);
+    tx.select(sql).then((result) => {
+      console.log('result[0]', result[0].num);
+      setTimeout(() => {
+        callback(result[0].num);
+      }, 0)
     });
   }
 
@@ -623,16 +625,17 @@ function WebSqlPouch(opts, callback) {
     var seq;
     var docCount;
     // try {
-      db.readTransaction( () => {
-        getMaxSeq(db, function (theSeq) {
+      db.readTransaction( async () => {
+        await getMaxSeq(db, function (theSeq) {
           seq = theSeq;
         });
-        countDocs(db, function (theDocCount) {
-          console.log('the doc count', theDocCount);
+        console.log('630');
+        await countDocs(db, (theDocCount) => {
+          console.log(theDocCount);
           docCount = theDocCount;
         });
       })
-      // .catch(websqlError(callback))
+      .catch(websqlError(callback))
       .then(() => {
         callback(null, {
           doc_count: docCount,
@@ -794,12 +797,14 @@ function WebSqlPouch(opts, callback) {
 
     db.readTransaction(() => {
       // count the docs in parallel to other operations
+      console.log('797');
       countDocs(db, function (docCount) {
         totalRows = docCount;
         console.log('totalRows', totalRows);
       });
 
 
+      console.log('805');
       /* istanbul ignore if */
       if (opts.update_seq) {
         // get max sequence in parallel to other operations
@@ -853,6 +858,8 @@ function WebSqlPouch(opts, callback) {
 
 
       } else {
+        console.log('859');
+
 
         // do a single query to fetch the documents
         var sql = select(
@@ -863,15 +870,34 @@ function WebSqlPouch(opts, callback) {
           DOC_STORE + '.id ' + (descending ? 'DESC' : 'ASC')
         );
         sql += ' LIMIT ' + limit + ' OFFSET ' + offset;
-        db.select(sql, sqlArgs).then((result) => {
-          console.log('890', result);
-          var rows = result;
-          // var rows = [];
-          // for (var index = 0; index < result.length; index++) {
-          //   rows.push(result[index]);
-          // }
-          processResult(rows);
-        });
+
+        console.log('872');
+        console.log(sql, sqlArgs)
+        if( !!sqlArgs ) {
+          db.select(sql, sqlArgs).then((result) => {
+            console.log('874', result);
+            // var rows = result;
+            var rows = [];
+            for (var index = 0; index < result.length; index++) {
+              rows.push(result[index]);
+            }
+            console.log('880', rows);
+            processResult(rows);
+            console.log('897');
+          });
+        } else {
+          db.select(sql).then((result) => {
+            console.log('874', result);
+            // var rows = result;
+            var rows = [];
+            for (var index = 0; index < result.length; index++) {
+              rows.push(result[index]);
+            }
+            console.log('880', rows);
+            processResult(rows);
+            console.log('897');
+          });
+        }
 
       }
 
@@ -920,6 +946,7 @@ function WebSqlPouch(opts, callback) {
               index = keys.indexOf(id, index + 1);
             } while (index > -1 && index < keys.length);
           }
+          console.log('947');
         }
         if (keys) {
           keys.forEach(function (key, index) {
@@ -1003,23 +1030,30 @@ function WebSqlPouch(opts, callback) {
 
       var sql = select(selectStmt, from, joiner, criteria, orderBy);
 
+      console.log(1016);
       var filter = filterChange(opts);
+      console.log(1018);
       if (!opts.view && !opts.filter) {
         // we can just limit in the query
         sql += ' LIMIT ' + limit;
       }
+      console.log(1023);
 
       var lastSeq = opts.since || 0;
       db.readTransaction(() => {
+        console.log(1027);
         db.select(sql, sqlArgs).then((result) => {
+          console.log(1029);
           function reportChange(change) {
             console.log("[pdb-index]", "reportChange" );
             return function () {
               opts.onChange(change);
             };
           }
+          console.log(result);
           for (var i = 0, l = result.length; i < l; i++) {
-            console.log(result);
+            console.log('res', result[i]);
+
             var item = result[i];
             var metadata = safeJsonParse(item.metadata);
             lastSeq = item.maxSeq;
@@ -1055,7 +1089,7 @@ function WebSqlPouch(opts, callback) {
           }
         });
       })
-      // .catch(websqlError(opts.complete))
+      .catch(websqlError(opts.complete))
       .then(function () {
         if (!opts.continuous) {
           console.log('[index-1089]',opts);
@@ -1143,7 +1177,7 @@ function WebSqlPouch(opts, callback) {
 
       compactRevs(revs, docId, tx);
     })
-    // .catch(websqlError(callback))
+    .catch(websqlError(callback))
     .then(() => {
       callback();
     });
@@ -1218,7 +1252,7 @@ function WebSqlPouch(opts, callback) {
       db.transaction(() => {
         putLocal(db);
       })
-      // .catch(websqlError(callback))
+      .catch(websqlError(callback))
       .then(function () {
         if (ret) {
           callback(null, ret);
@@ -1254,7 +1288,7 @@ function WebSqlPouch(opts, callback) {
       removeLocal(opts.ctx);
     } else {
       db.transaction(() => {removeLocal()})
-      // .catch(websqlError(callback))
+      .catch(websqlError(callback))
       .then(function () {
         if (ret) {
           callback(null, ret);
@@ -1273,7 +1307,7 @@ function WebSqlPouch(opts, callback) {
         db.execute('DROP TABLE IF EXISTS ' + store, []);
       });
     })
-    // .catch(websqlError(callback))
+    .catch(websqlError(callback))
     .then(function () {
       if (hasLocalStorage()) {
         delete window.localStorage['_pouch__websqldb_' + api._name];
