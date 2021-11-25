@@ -1,13 +1,13 @@
-import { Injectable, NgZone, OnInit } from '@angular/core';
+import { Injectable, NgZone, OnInit } from "@angular/core";
 
 // import typings
 /**
  * custom typings so typescript knows about the schema-fields
  */
 
-import type { RxDocument, RxCollection, RxDatabase } from 'rxdb/plugins/core';
+import type { RxDocument, RxCollection, RxDatabase } from "rxdb/plugins/core";
 
-import { RxDBValidatePlugin } from 'rxdb/plugins/validate';
+import { RxDBValidatePlugin } from "rxdb/plugins/validate";
 
 export type RxHeroDocumentType = {
   name: string;
@@ -16,10 +16,7 @@ export type RxHeroDocumentType = {
 
 export type RxHeroDocument = RxDocument<RxHeroDocumentType>;
 
-export type RxHeroCollection = RxCollection<
-  RxHeroDocumentType,
-  {}
->;
+export type RxHeroCollection = RxCollection<RxHeroDocumentType, {}>;
 
 export type RxHeroesCollections = {
   hero: RxHeroCollection;
@@ -33,51 +30,49 @@ export type RxHeroesDatabase = RxDatabase<RxHeroesCollections>;
  * only the modules that we need.
  * A default import would be: import RxDB from 'rxdb';
  */
-import { createRxDatabase, addRxPlugin } from 'rxdb/plugins/core';
+import { createRxDatabase, addRxPlugin } from "rxdb/plugins/core";
 
-import { addPouchPlugin, getRxStoragePouch } from 'rxdb/plugins/pouchdb';
+import { addPouchPlugin, getRxStoragePouch } from "rxdb/plugins/pouchdb";
 
-import { RxDBLocalDocumentsPlugin } from 'rxdb/plugins/local-documents';
+import { RxDBLocalDocumentsPlugin } from "rxdb/plugins/local-documents";
 
-import { createPlugin } from '../../../../packages/ns-pdb-adapter';
-import mapreduce from 'pouchdb-mapreduce';
-import HttpPouch from 'pouchdb-adapter-http';
-import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
+import { createPlugin } from "../../../../packages/ns-pdb-adapter";
+import mapreduce from "pouchdb-mapreduce";
+import HttpPouch from "pouchdb-adapter-http";
+import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 
-import { filter } from 'rxjs/operators';
+import { filter } from "rxjs/operators";
 
-import {
-  RxDBReplicationGraphQLPlugin,
-} from 'rxdb/plugins/replication-graphql';
-import { SubscriptionService } from './subscription.service';
+import { RxDBReplicationGraphQLPlugin } from "rxdb/plugins/replication-graphql";
+import { SubscriptionService } from "./subscription.service";
 
 export const heroSchema = {
   version: 0,
-  primaryKey: 'id',
-  type: 'object',
+  primaryKey: "id",
+  type: "object",
   properties: {
     id: {
-      type: 'string',
+      type: "string",
     },
     name: {
-      type: 'string',
+      type: "string",
     },
     color: {
-      type: 'string',
+      type: "string",
     },
     updatedAt: {
-      type: 'number',
+      type: "number",
     },
   },
-  indexes: ['name', 'color', 'updatedAt'],
-  required: ['id', 'color'],
+  indexes: ["name", "color", "updatedAt"],
+  required: ["id", "color"],
 };
 
 export const graphQLGenerationInput = {
   hero: {
     schema: heroSchema,
-    feedKeys: ['id', 'updatedAt'],
-    deletedFlag: 'deleted',
+    feedKeys: ["id", "updatedAt"],
+    deletedFlag: "deleted",
     sync: true,
   },
 };
@@ -85,7 +80,7 @@ export const graphQLGenerationInput = {
 const batchSize = 5;
 
 export const getPushQuery = () => {
-  console.log('push');
+  console.log("push");
   const inputName = `[hero_insert_input!]!`;
   return (doc) => {
     // remove rxdb columns before push
@@ -93,20 +88,20 @@ export const getPushQuery = () => {
     delete doc._attachments;
     delete doc._rev;
     const query = `mutation
-                hero ($doc: ${inputName}) {
-                  insert_hero(
-                    objects: $doc,
-                    on_conflict: {
-                      constraint: hero_pkey,
-                      update_columns: [
-                        name, color, updatedAt
-                      ]
-                  }){
-                    returning {
-                      id name color updatedAt
-                    }
-                  }
-               }`;
+      hero ($doc: ${inputName}) {
+        insert_hero(
+          objects: $doc,
+          on_conflict: {
+            constraint: hero_pkey,
+            update_columns: [
+              name, color, updatedAt
+            ]
+        }){
+          returning {
+            id name color updatedAt
+          }
+        }
+      }`;
 
     const variables = {
       doc,
@@ -121,12 +116,9 @@ export const getPushQuery = () => {
 
 export const getPullQuery = () => {
   const queryBuilder = (doc) => {
-
-    console.log('pull request');
+    console.log("pull request");
     // the first pull does not have a start-document
-    const sortByValue = doc ? doc['updatedAt'] : new Date(0).toISOString();
-    console.log('sortByValue', sortByValue);
-    // where: {updatedAt: {_gt: "${sortByValue}"}},
+    const sortByValue = doc ? doc["updatedAt"] : new Date(0).toISOString();
     const query = `{
       hero(
         where: {updatedAt: {_gt: "${sortByValue}"}},
@@ -145,7 +137,7 @@ export const getPullQuery = () => {
   return queryBuilder;
 };
 
-const hasuraProject = 'working-oriole-73.hasura.app/v1/graphql';
+const hasuraProject = "working-oriole-73.hasura.app/v1/graphql";
 let replicationState;
 /**
  * Loads RxDB plugins
@@ -168,35 +160,35 @@ async function loadRxDBPlugins(): Promise<void> {
 async function _create(): Promise<RxHeroesDatabase> {
   await loadRxDBPlugins();
 
-  console.log('DatabaseService: creating database..');
+  console.log("DatabaseService: creating database..");
   const db = await createRxDatabase<RxHeroesCollections>({
-    name: 'nssqlite',
-    storage: getRxStoragePouch('nativescript-sqlite'),
+    name: "nssqlite",
+    storage: getRxStoragePouch("nativescript-sqlite"),
     multiInstance: false,
   });
-  console.log('DatabaseService: created database');
+  console.log("DatabaseService: created database");
 
-  console.log('DatabaseService: create collections');
+  console.log("DatabaseService: create collections");
   await db.addCollections({
     hero: {
       schema: heroSchema,
     },
   });
 
-  console.log('hero collection');
+  console.log("hero collection");
 
   db.hero.$.pipe(filter((ev: any) => !ev.isLocal)).subscribe((ev) => {
-    console.log('collection.$ emitted:');
+    console.log("collection.$ emitted:");
     console.dir(ev);
   });
 
-  console.log('DatabaseService: Create replicator..');
-  console.log('https://' + hasuraProject);
+  console.log("DatabaseService: Create replicator..");
+  console.log("https://" + hasuraProject);
   replicationState = db.hero.syncGraphQL({
-    url: 'https://' + hasuraProject,
+    url: "https://" + hasuraProject,
     headers: {
-      'x-hasura-admin-secret':
-        '2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE',
+      "x-hasura-admin-secret":
+        "2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE",
     },
     push: {
       batchSize,
@@ -212,31 +204,29 @@ async function _create(): Promise<RxHeroesDatabase> {
      * we can set the liveIntervall to a high value
      */
     liveInterval: 1000 * 60 * 1, // 1 minutes
-    deletedFlag: 'deleted',
+    deletedFlag: "deleted",
   });
   // show replication-errors in logs
   replicationState.error$.subscribe((err) => {
-    console.error('replication error:');
+    console.error("replication error:");
     console.dir(err);
   });
 
   replicationState.send$.subscribe((doc) => {
-    console.log('Sending:', doc);
+    console.log("Sending:", doc);
   });
 
   replicationState.received$.subscribe((doc) => {
-    console.log('Received:', doc);
+    console.log("Received:", doc);
   });
-
-
 
   // log all collection events for debugging
   db.hero.$.pipe(filter((ev: any) => !ev.isLocal)).subscribe((ev) => {
-    console.log('colection.$ emitted:');
+    console.log("colection.$ emitted:");
     console.dir(ev);
   });
 
-  console.log('DatabaseService: created');
+  console.log("DatabaseService: created");
 
   return db;
 }
@@ -255,7 +245,7 @@ export async function initDatabase() {
    * The database might already be there
    */
   if (!initState) {
-    console.log('initDatabase()');
+    console.log("initDatabase()");
     initState = _create().then((db) => (DB_INSTANCE = db));
   }
   await initState;
@@ -264,7 +254,10 @@ export async function initDatabase() {
 @Injectable()
 export class DatabaseService implements OnInit {
   repl_ = replicationState;
-  constructor(private subscriptionService: SubscriptionService, private zone: NgZone) {
+  constructor(
+    private subscriptionService: SubscriptionService,
+    private zone: NgZone
+  ) {
     sub = subscriptionService;
   }
 
@@ -273,55 +266,56 @@ export class DatabaseService implements OnInit {
   }
 
   ngOnInit() {
-    const endpointUrl = 'wss://' + hasuraProject;
+    const endpointUrl = "wss://" + hasuraProject;
     console.log(endpointUrl);
-    console.log('Database service: Create websocket');
-    const wsClient = this.subscriptionService.getWSClient(
-      endpointUrl,
-      {
-        lazy: true,
-        reconnect: true,
-        connectionParams: async () => {
-          return {
-            headers: {
-              'x-hasura-admin-secret':
-                '2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE',
-            },
-          };
+    console.log("Database service: Create websocket");
+    this.zone.run(() => {
+
+      const wsClient = this.subscriptionService.getWSClient(
+        endpointUrl,
+        {
+          lazy: true,
+          reconnect: true,
+          connectionParams: async () => {
+            return {
+              headers: {
+                "x-hasura-admin-secret":
+                  "2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE",
+              },
+            };
+          },
+          reconnectionAttempts: 999,
         },
-        reconnectionAttempts: 999,
-      },
-      WebSocket
-    ) as any;
+        WebSocket
+      ) as any;
 
-    const query = `
-    subscription HeroSubscription {
-      hero {
-        name
-        id
-        updatedAt
-        deleted
-        color
+      const query = `
+      subscription HeroSubscription {
+        hero {
+          name
+          id
+          updatedAt
+          deleted
+          color
+        }
       }
-    }
-    `;
+      `;
 
-    console.log('Database service: request subscription.');
-    const ret = wsClient.request({
-      query,
-    });
-    ret.subscribe({
-      next: async (data) => {
-        this.zone.runOutsideAngular(() => {
-        console.log('subscription emitted => trigger run()');
-        console.dir(data);
-        replicationState.run(true);
-        });
+      console.log("Database service: request subscription.");
+      const ret = wsClient.request({
+        query,
+      });
+      ret.subscribe({
+        next: async (data) => {
+          console.log("subscription emitted => trigger run()");
+          console.dir(data);
+          replicationState.run(true);
         },
         error(error) {
-          console.log('run() got error:');
+          console.log("run() got error:");
           console.dir(error);
         },
       });
+    })
   }
 }
