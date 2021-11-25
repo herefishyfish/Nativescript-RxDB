@@ -52,25 +52,21 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
   }
 
   var db;
-  // console.log(docInfos);
   var results = new Array(docInfos.length);
   var fetchedDocs = new Map();
 
   var preconditionErrored;
   function complete() {
     setTimeout(() => {
-      // console.log('[bulkDocs]complete');
       if (preconditionErrored) {
         return callback(preconditionErrored);
       }
       websqlChanges.notify(api._name);
-      // console.log( 'RESULTS:', results, ':(' );
         callback(null, results);
     }, 0);
   }
 
   function verifyAttachment(digest, callback) {
-    // console.log('[bulkDocs]verifyAttachment');
     var sql = 'SELECT count(*) as cnt FROM ' + ATTACH_STORE +
       ' WHERE digest=?';
     db.select(sql, [digest]).then((result) => {
@@ -86,7 +82,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
   }
 
   function verifyAttachments(finish) {
-    // console.log('[bulkDocs]verifyAttachments');
     var digests = [];
     docInfos.forEach(function (docInfo) {
       if (docInfo.data && docInfo.data._attachments) {
@@ -105,7 +100,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     var err;
 
     function checkDone() {
-      // console.log('[bulkDocs]checkDone');
       if (++numDone === digests.length) {
         finish(err);
       }
@@ -122,10 +116,8 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
 
   function writeDoc(docInfo, winningRev, winningRevIsDeleted, newRevIsDeleted,
     isUpdate, delta, resultsIdx, callback) {
-    // console.log('[bulkDocs]writeDoc');
 
     function finish() {
-      // console.log('[bulkDocs]finish');
       var data = docInfo.data;
       var deletedInt = newRevIsDeleted ? 1 : 0;
 
@@ -139,7 +131,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
       // map seqs to attachment digests, which
       // we will need later during compaction
       function insertAttachmentMappings(seq, callback) {
-        // console.log('[bulkDocs]insertAttachmentMappings');
         var attsAdded = 0;
         var attsToAdd = Object.keys(data._attachments || {});
 
@@ -147,14 +138,12 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
           return callback();
         }
         function checkDone() {
-          // console.log('[bulkDocs]checkDone');
           if (++attsAdded === attsToAdd.length) {
             callback();
           }
           return false; // ack handling a constraint error
         }
         function add(att) {
-          // console.log('[bulkDocs]add');
           var sql = 'INSERT INTO ' + ATTACH_AND_SEQ_STORE +
             ' (digest, seq) VALUES (?,?)';
           var sqlArgs = [data._attachments[att].digest, seq];
@@ -174,13 +163,11 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
         var seq = result[0]["last_insert_rowid()"];
 
         // var seq = result;
-        // console.log('SEQ', seq);
 
         insertAttachmentMappings(seq, function () {
           dataWritten(db, seq);
         });
       }).catch(() => {
-        // console.log('constraint error, recover by updating instead (see #1638)');
         var fetchSql = select('seq', BY_SEQ_STORE, null,
           'doc_id=? AND rev=?');
         db.select(fetchSql, [id, rev]).then((res) => {
@@ -188,7 +175,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
           var sql = 'UPDATE ' + BY_SEQ_STORE +
             ' SET json=?, deleted=? WHERE doc_id=? AND rev=?;';
           var sqlArgs = [json, deletedInt, id, rev];
-          // console.log(sqlArgs);
           db.execute(sql, sqlArgs).then(() => {
             insertAttachmentMappings(seq, function () {
               dataWritten(db, seq);
@@ -200,7 +186,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     }
 
     function collectResults(attachmentErr) {
-      // console.log('[bulkDocs]collectResults');
       if (!err) {
         if (attachmentErr) {
           err = attachmentErr;
@@ -214,7 +199,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     var err = null;
     var recv = 0;
 
-    // console.log('[bulkdocs]213');
     docInfo.data._id = docInfo.metadata.id;
     docInfo.data._rev = docInfo.metadata.rev;
     var attachments = Object.keys(docInfo.data._attachments || {});
@@ -225,7 +209,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     }
 
     function attachmentSaved(err) {
-      // console.log('[bulkDocs]attachmentSaved');
       recv++;
       collectResults(err);
     }
@@ -249,11 +232,8 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     }
 
     function dataWritten(db, seq) {
-      // console.log('[bulkDocs]dataWritten');
       var id = docInfo.metadata.id;
-      // console.log( 'id',id, docInfo );
       var revsToCompact = docInfo.stemmedRevs || [];
-      // console.log('revsToCompact', revsToCompact);
       if (isUpdate && api.auto_compaction) {
         revsToCompact = compactTree(docInfo.metadata).concat(revsToCompact);
       }
@@ -265,7 +245,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
       docInfo.metadata.seq = seq;
       var rev = docInfo.metadata.rev;
       delete docInfo.metadata.rev;
-      // console.log('[bulkdocs][265]', docInfo);
 
       var sql = isUpdate ?
       'UPDATE ' + DOC_STORE +
@@ -275,21 +254,17 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
         : 'INSERT INTO ' + DOC_STORE +
       ' (id, winningseq, max_seq, json) VALUES (?,?,?,?);';
       var metadataStr = safeJsonStringify(docInfo.metadata);
-      // console.log('[bulkdocs][275]', metadataStr);
       var params = isUpdate ?
         [metadataStr, seq, winningRev, id] :
         [id, seq, seq, metadataStr];
 
-      // console.log('280 params', params);
 
       db.execute(sql, params).then(() => {
-        // console.log('[bulkdocs]277')
         results[resultsIdx] = {
           ok: true,
           id: docInfo.metadata.id,
           rev: rev
         };
-        // console.log('????',results);
         fetchedDocs.set(id, docInfo.metadata);
         callback();
       });
@@ -297,23 +272,18 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
   }
 
   function websqlProcessDocs() {
-    // console.log('[bulkDocs]websqlProcessDocs');
     processDocs(dbOpts.revs_limit, docInfos, api, fetchedDocs, db,
                 results, writeDoc, opts);
   }
 
   function fetchExistingDocs(callback) {
-    // console.log('[bulkDocs]fetchExistingDocs');
     if (!docInfos.length) {
-      // console.log('[bulkDocs]!docInfo');
       return callback();
     }
-    // console.log(docInfos);
 
     var numFetched = 0;
 
     function checkDone() {
-      // console.log('[bulkDocs]checkDone');
       if (++numFetched === docInfos.length) {
         callback();
       }
@@ -321,18 +291,13 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
 
     docInfos.forEach(function (docInfo) {
       if (docInfo._id && isLocalId(docInfo._id)) {
-        // console.log('docInfo._id && isLocalId')
         return checkDone(); // skip local docs
       }
-      // console.log('[bulkdocs]docID',id);
       var id = docInfo.metadata.id;
-      // console.log('docID',id);
       db.select('SELECT json FROM ' + DOC_STORE +
       ' WHERE id = ?', [id]).then((result) => {
-        // console.log('[bulkDocs]', result);
         if (result.length) {
           var metadata = safeJsonParse(result[0].json);
-          // console.log('[bulkddocs]metadata', metadata);
           fetchedDocs.set(id, metadata);
         }
         checkDone();
@@ -341,10 +306,8 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
   }
 
   function saveAttachment(digest, data, callback) {
-    // console.log('[bulkDocs]saveAttachment');
     var sql = 'SELECT digest FROM ' + ATTACH_STORE + ' WHERE digest=?';
     db.select(sql, [digest]).then((result) => {
-      // console.log('[bulkdocs]333',result)
       if (result.length) { // attachment already exists
         return callback();
       }
@@ -354,10 +317,8 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
       sql = 'INSERT INTO ' + ATTACH_STORE +
       ' (digest, body, escaped) VALUES (?,?,1)';
       db.execute(sql, [digest, escapeBlob(data)]).then(() => {
-        // console.log('Save attachment');
         callback();
       }).catch(function () {
-        // console.log('ignore constant errors, means it already exists');
         callback();
         return false; // ack we handled the error
       });
@@ -365,14 +326,12 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
   }
 
   preprocessAttachments(docInfos, 'binary', function (err) {
-    // console.log('[bulkDocs]preprocessAttachments');
     if (err) {
       return callback(err);
     }
     db.transaction(() => {
       verifyAttachments(function (err) {
         if (err) {
-          // console.log(err);
           preconditionErrored = err;
         } else {
           fetchExistingDocs(websqlProcessDocs);
@@ -381,7 +340,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     })
     // .catch((err) => websqlError(callback))
     .then(() => {
-      // console.log('!!!!');
       complete();
     });
   });

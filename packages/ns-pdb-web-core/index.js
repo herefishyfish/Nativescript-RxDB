@@ -62,27 +62,22 @@ var websqlChanges = new Changes();
 
 
 function fetchAttachmentsIfNecessary(doc, opts, api, txn, cb) {
-  // console.log('[pdb-index]', 'fetchAttachmentsIfNecessary');
   var attachments = Object.keys(doc._attachments || {});
   if (!attachments.length) {
-    // console.log('no attachments')
     return cb && cb();
   }
   var numDone = 0;
 
   function checkDone() {
-    // console.log("[pdb-index]", "checkDone" );
     if (++numDone === attachments.length && cb) {
       cb();
     }
   }
 
   function fetchAttachment(doc, att) {
-    // console.log("[pdb-index]", "fetchAttachment" );
     var attObj = doc._attachments[att];
     var attOpts = {binary: opts.binary, ctx: txn};
     api._getAttachment(doc._id, att, attObj, attOpts, function (_, data) {
-        // console.log('[pdb-index]_getAttachment');
         doc._attachments[att] = Object.assign(
           pick(attObj, ['digest', 'content_type']),
           { data: data }
@@ -138,7 +133,6 @@ function WebSqlPouch(opts, callback) {
   var encoding;
 
   api._name = opts.name;
-  // console.log('[pdb-index]_name');
 
   // extend the options here, because sqlite plugin has a ton of options
   // and they are constantly changing, so it's more prudent to allow anything
@@ -158,13 +152,10 @@ function WebSqlPouch(opts, callback) {
   }
 
   function dbCreated() {
-    // console.log("[pdb-index]", "dbCreated" );
     // note the db name in case the browser upgrades to idb
     if (hasLocalStorage()) {
       window.localStorage['_pouch__websqldb_' + api._name] = true;
-      // console.log('[pdb-index]_name', api._name);
     }
-    // console.log('callback', callback, api);
     callback(null, api);
   }
 
@@ -174,7 +165,6 @@ function WebSqlPouch(opts, callback) {
   // and add these values.
   // Called migration2 because it corresponds to adapter version (db_version) #2
   function runMigration2(tx, callback) {
-    // console.log("[pdb-index]", "runMigration2" );
     // index used for the join in the allDocs query
     dbExecuteSql(DOC_STORE_WINNINGSEQ_INDEX_SQL);
 
@@ -219,7 +209,6 @@ function WebSqlPouch(opts, callback) {
 
   // in this migration, we make all the local docs unversioned
   function runMigration3(tx, callback) {
-    // console.log("[pdb-index]", "runMigration3" );
     var local = 'CREATE TABLE IF NOT EXISTS ' + LOCAL_STORE +
       ' (id UNIQUE, rev, json)';
     dbExecuteSql(local, [], function () {
@@ -234,7 +223,6 @@ function WebSqlPouch(opts, callback) {
           rows.push(res[i]);
         }
         function doNext() {
-          // console.log("[pdb-index]", "doNext" );
           if (!rows.length) {
             return callback(tx);
           }
@@ -259,12 +247,9 @@ function WebSqlPouch(opts, callback) {
 
   // in this migration, we remove doc_id_rev and just use rev
   function runMigration4(tx, callback) {
-    // console.log("[pdb-index]", "runMigration4" );
 
     function updateRows(rows) {
-      // console.log("[pdb-index]", "updateRows" );
       function doNext() {
-        // console.log("[pdb-index]", "doNext" );
         if (!rows.length) {
           return callback(tx);
         }
@@ -303,10 +288,8 @@ function WebSqlPouch(opts, callback) {
   // in this migration, we add the attach_and_seq table
   // for issue #2818
   function runMigration5(tx, callback) {
-    // console.log("[pdb-index]", "runMigration5" );
 
     function migrateAttsAndSeqs(tx) {
-      // console.log("[pdb-index]", "migrateAttsAndSeqs" );
       // need to actually populate the table. this is the expensive part,
       // so as an optimization, check first that this database even
       // contains attachments
@@ -320,7 +303,6 @@ function WebSqlPouch(opts, callback) {
         var offset = 0;
         var pageSize = 10;
         function nextPage() {
-          // console.log("[pdb-index]", "nextPage" );
           var sql = select(
             SELECT_DOCS + ', ' + DOC_STORE + '.id AS id',
             [DOC_STORE, BY_SEQ_STORE],
@@ -336,7 +318,6 @@ function WebSqlPouch(opts, callback) {
             }
             var digestSeqs = {};
             function addDigestSeq(digest, seq) {
-              // console.log("[pdb-index]", "addDigestSeq" );
               // uniq digest/seq pairs, just in case there are dups
               var seqs = digestSeqs[digest] = (digestSeqs[digest] || []);
               if (seqs.indexOf(seq) === -1) {
@@ -393,7 +374,6 @@ function WebSqlPouch(opts, callback) {
   // in this migration, we use escapeBlob() and unescapeBlob()
   // instead of reading out the binary as HEX, which is slow
   function runMigration6(tx, callback) {
-    // console.log("[pdb-index]", "runMigration6" );
     var sql = 'ALTER TABLE ' + ATTACH_STORE +
       ' ADD COLUMN escaped TINYINT(1) DEFAULT 0';
     dbExecuteSql(sql, [], callback);
@@ -402,7 +382,6 @@ function WebSqlPouch(opts, callback) {
   // issue #3136, in this migration we need a "latest seq" as well
   // as the "winning seq" in the doc store
   function runMigration7(tx, callback) {
-    // console.log("[pdb-index]", "runMigration7" );
     var sql = 'ALTER TABLE ' + DOC_STORE +
       ' ADD COLUMN max_seq INTEGER';
     dbExecuteSql(sql, [], function (tx) {
@@ -420,7 +399,6 @@ function WebSqlPouch(opts, callback) {
   }
 
   function checkEncoding(tx, cb) {
-    // console.log("[pdb-index]", "checkEncoding" );
     // UTF-8 on chrome/android, UTF-16 on safari < 7.1
     db.select('SELECT HEX("a") AS hex', []).then((res) => {
         var hex = res[0].hex;
@@ -431,7 +409,6 @@ function WebSqlPouch(opts, callback) {
   }
 
   function onGetInstanceId() {
-    // console.log("[pdb-index]", "onGetInstanceId" );
     while (idRequests.length > 0) {
       var idCallback = idRequests.pop();
       idCallback(null, instanceId);
@@ -439,7 +416,6 @@ function WebSqlPouch(opts, callback) {
   }
 
   function onGetVersion(tx, dbVersion) {
-    // console.log("[pdb-index]", "onGetVersion", dbVersion );
     if (dbVersion === 0) {
       // initial schema
 
@@ -471,16 +447,12 @@ function WebSqlPouch(opts, callback) {
           db.execute(BY_SEQ_STORE_DELETED_INDEX_SQL);
           db.execute(BY_SEQ_STORE_DOC_ID_REV_INDEX_SQL);
           db.execute(meta).then((result) => {
-            // console.log('meta result', result)
             // mark the db version, and new dbid
-            // console.log('[pdb-index]Marking DB Version');
             var initSeq = 'INSERT INTO ' + META_STORE +
               ' (db_version, dbid) VALUES (?,?)';
             instanceId = uuid();
-            // console.log('instanceId', instanceId, 'ADAPTER: ', ADAPTER_VERSION);
             var initSeqArgs = [ADAPTER_VERSION, instanceId];
             db.execute(initSeq, initSeqArgs).then((result) => {
-              // console.log('initseq', result);
               onGetInstanceId();
             });
           });
@@ -499,7 +471,6 @@ function WebSqlPouch(opts, callback) {
         var sql = 'SELECT dbid FROM ' + META_STORE;
         db.select(sql).then((result) => {
           instanceId = result[0].dbid;
-          // console.log('instance ID ', instanceId);
           onGetInstanceId();
         });
       };
@@ -520,11 +491,9 @@ function WebSqlPouch(opts, callback) {
       var i = dbVersion;
       var nextMigration = function (tx) {
         try {
-          // console.log('migration', i)
           tasks[i - 1](tx, nextMigration);
           i++;
         } catch(err) {
-          // console.log('!!! Migration Failed...');
         }
       };
       nextMigration(tx);
@@ -532,7 +501,6 @@ function WebSqlPouch(opts, callback) {
   }
 
   function setup() {
-    // console.log("[pdb-index]", "setup" );
     db.transaction((cancelTransaction) => {
       // first check the encoding
       checkEncoding(db, () => {
@@ -540,27 +508,20 @@ function WebSqlPouch(opts, callback) {
         fetchVersion(db);
       });
 
-      // console.log('transaction')
     })
     .catch(websqlError(callback))
     .then(() => {
-      // console.log('creating db')
       dbCreated();
-      // console.log('db created')
     });
   }
 
   function fetchVersion(tx) {
-    // console.log("[pdb-index]", "fetchVersion" );
     var sql = 'SELECT sql FROM sqlite_master WHERE tbl_name = ' + META_STORE;
 
     db.select(sql).then((result) => {
-      // console.log('[pdb-index]fetchVersion Select result:', db, result);
       if (result?.length == 0 || !result) {
-        // console.log('Version 0', 'database hasnt even been created yet (version 0)');
         onGetVersion(db, 0);
       } else if (!/db_version/.test(result[0]?.sql)) {
-        // console.log('table was created, but without the new db_version column,');
         // so add it.
         db.execute('ALTER TABLE ' + META_STORE +
           ' ADD COLUMN db_version INTEGER', []).then(() => {
@@ -568,12 +529,9 @@ function WebSqlPouch(opts, callback) {
           onGetVersion(db, 1);
         });
       } else { //
-        // console.log('column exists, we can safely get it');
         db.select('SELECT db_version FROM ' + META_STORE,
           []).then((result) => {
-          // console.log(result);
           var dbVersion = result[0].db_version;
-          // console.log('db version: ', result);
           onGetVersion(db, dbVersion);
         });
       }
@@ -583,7 +541,6 @@ function WebSqlPouch(opts, callback) {
   setup();
 
   function getMaxSeq(tx, callback) {
-    // console.log("[pdbs-index]", "getMaxSeq." );
     var sql = 'SELECT MAX(seq) AS seq FROM ' + BY_SEQ_STORE;
     db.select(sql, []).then((res) => {
       var updateSeq = res[0].seq || 0;
@@ -592,7 +549,6 @@ function WebSqlPouch(opts, callback) {
   }
 
   function countDocs(tx, callback) {
-    // console.log("[pdb-index]", "countDocs" );
     // count the total rows
     var sql = select(
       'COUNT(' + DOC_STORE + '.id) AS \'num\'',
@@ -607,18 +563,15 @@ function WebSqlPouch(opts, callback) {
   }
 
   api._remote = false;
-  // console.log('[pdb-index]_remote');
   api.type = function () {
     return 'websql';
   };
 
   api._id = toPromise(function (callback) {
-    // console.log('[pdb-index]_id');
     callback(null, instanceId);
   });
 
   api._info = function (callback) {
-    // console.log('[pdb-index]_info');
     var seq;
     var docCount;
     // try {
@@ -626,9 +579,7 @@ function WebSqlPouch(opts, callback) {
         await getMaxSeq(db, function (theSeq) {
           seq = theSeq;
         });
-        // console.log('630');
         await countDocs(db, (theDocCount) => {
-          // console.log(theDocCount);
           docCount = theDocCount;
         });
       })
@@ -640,19 +591,16 @@ function WebSqlPouch(opts, callback) {
           websql_encoding: encoding
         });
       });
-      // // console.log(docCount);
 
     // catch (error) {
     // }
   };
 
   api._bulkDocs = function (req, reqOpts, callback) {
-    // console.log('[pdb-index]_bulkDocs');
     websqlBulkDocs(opts, req, reqOpts, api, db, websqlChanges, callback);
   };
 
   function latest(tx, id, rev, callback, finish) {
-    // console.log("[pdb-index]", "latest" );
     var sql = select(
         SELECT_DOCS,
         [DOC_STORE, BY_SEQ_STORE],
@@ -672,19 +620,16 @@ function WebSqlPouch(opts, callback) {
   }
 
   api._get = function (id, opts, callback) {
-    // console.log('[pdb-index]_get');
     var doc;
     var metadata;
     var tx = opts.ctx;
     if (!tx) {
       return db.readTransaction(() => {
         api._get(id, Object.assign({ctx: db}, opts), callback);
-        // console.log('[pdb-index]_get');
       });
     }
 
     function finish(err) {
-      // console.log("[pdb-index]", "finish" );
       callback(err, {doc: doc, metadata: metadata, ctx: tx});
     }
 
@@ -703,7 +648,6 @@ function WebSqlPouch(opts, callback) {
         opts.latest = false;
         opts.rev = latestRev;
         api._get(id, opts, callback);
-        // console.log('[pdb-index]_get');
       }, finish);
       return;
     } else {
@@ -732,7 +676,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._allDocs = function (opts, callback) {
-    // console.log('[pdb-index]_allDocs');
     var results = [];
     var totalRows;
     var updateSeq;
@@ -794,14 +737,11 @@ function WebSqlPouch(opts, callback) {
 
     db.readTransaction(() => {
       // count the docs in parallel to other operations
-      // console.log('797');
       countDocs(db, (docCount) => {
         totalRows = docCount;
-        // console.log('totalRows', totalRows);
       });
 
 
-      // console.log('805');
       /* istanbul ignore if */
       if (opts.update_seq) {
         // get max sequence in parallel to other operations
@@ -814,7 +754,6 @@ function WebSqlPouch(opts, callback) {
         return;
       }
 
-      // console.log('keys', keys);
       if (keys) {
 
         var finishedCount = 0;
@@ -840,7 +779,6 @@ function WebSqlPouch(opts, callback) {
           );
           sql += ' LIMIT ' + limit + ' OFFSET ' + offset;
           db.select(sql, sqlArgs).then((result) => {
-            // console.log(result, db);
             finishedCount++;
             for (var index = 0; index < result.length; index++) {
               allRows.push(result[index]);
@@ -855,7 +793,6 @@ function WebSqlPouch(opts, callback) {
 
 
       } else {
-        // console.log('859');
 
 
         // do a single query to fetch the documents
@@ -868,39 +805,29 @@ function WebSqlPouch(opts, callback) {
         );
         sql += ' LIMIT ' + limit + ' OFFSET ' + offset;
 
-        // console.log('872');
-        // console.log(sql, sqlArgs)
         if( !!sqlArgs ) {
           db.select(sql, sqlArgs).then((result) => {
-            // console.log('874', result);
             // var rows = result;
             var rows = [];
             for (var index = 0; index < result.length; index++) {
               rows.push(result[index]);
             }
-            // console.log('880', rows);
             processResult(rows);
-            // console.log('897');
           });
         } else {
           db.select(sql).then((result) => {
-            // console.log('874', result);
             // var rows = result;
             var rows = [];
             for (var index = 0; index < result.length; index++) {
               rows.push(result[index]);
             }
-            // console.log('880', rows);
             processResult(rows);
-            // console.log('897');
           });
         }
 
       }
 
       function processResult(rows) {
-        // console.log("[pdb-index]", "processResult" );
-        // console.log(rows);
 
         for (var i = 0, l = rows.length; i < l; i++) {
           var item = rows[i];
@@ -913,7 +840,6 @@ function WebSqlPouch(opts, callback) {
             key: id,
             value: {rev: winningRev}
           };
-          // console.log('doc',doc);
           if (opts.include_docs) {
             doc.doc = data;
             doc.doc._rev = winningRev;
@@ -943,13 +869,11 @@ function WebSqlPouch(opts, callback) {
               index = keys.indexOf(id, index + 1);
             } while (index > -1 && index < keys.length);
           }
-          // console.log('947');
         }
         if (keys) {
           keys.forEach(function (key, index) {
             if (!results[index]) {
               results[index] = {key: key, error: 'not_found'};
-              // console.log(results[index]);
             }
           });
         }
@@ -963,24 +887,19 @@ function WebSqlPouch(opts, callback) {
         offset: opts.skip,
         rows: results
       };
-      // console.log(returnVal);
       /* istanbul ignore if */
       if (opts.update_seq) {
         returnVal.update_seq = updateSeq;
       }
-      // console.log('HELLO');
       callback(null, returnVal);
-      // console.log('HELLO DONE');
     });
   };
 
   api._changes = function (opts) {
-    // console.log('[pdb-index]_changes');
     opts = clone(opts);
 
     if (opts.continuous) {
       var id = api._name + ':' + uuid();
-      // console.log('[pdb-index]_name');
       websqlChanges.addListener(api._name, id, api, opts);
       websqlChanges.notify(api._name);
       return {
@@ -1004,7 +923,6 @@ function WebSqlPouch(opts, callback) {
     var numResults = 0;
 
     function fetchChanges() {
-      // console.log("[pdb-index]", "fetchChanges" );
 
       var selectStmt =
         DOC_STORE + '.json AS metadata, ' +
@@ -1029,29 +947,21 @@ function WebSqlPouch(opts, callback) {
 
       var sql = select(selectStmt, from, joiner, criteria, orderBy);
 
-      // console.log(1016);
       var filter = filterChange(opts);
-      // console.log(1018);
       if (!opts.view && !opts.filter) {
         // we can just limit in the query
         sql += ' LIMIT ' + limit;
       }
-      // console.log(1023);
 
       var lastSeq = opts.since || 0;
       db.readTransaction(() => {
-        // console.log(1027);
         db.select(sql, sqlArgs).then((result) => {
-          // console.log(1029);
           function reportChange(change) {
-            // console.log("[pdb-index]", "reportChange" );
             return function () {
               opts.onChange(change);
             };
           }
-          // console.log(result);
           for (var i = 0, l = result.length; i < l; i++) {
-            // console.log('res', result[i]);
 
             var item = result[i];
             var metadata = safeJsonParse(item.metadata);
@@ -1064,7 +974,6 @@ function WebSqlPouch(opts, callback) {
 
             var filtered = filter(change);
             if (typeof filtered === 'object') {
-              // console.log('[index-1063]', opts);
               return opts.complete(filtered);
             }
 
@@ -1091,7 +1000,6 @@ function WebSqlPouch(opts, callback) {
       .catch(websqlError(opts.complete))
       .then(function () {
         if (!opts.continuous) {
-          // console.log('[index-1089]',opts);
           opts.complete(null, {
             results: results,
             last_seq: lastSeq
@@ -1104,13 +1012,11 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._close = function (callback) {
-    // console.log('[pdb-index]_close');
     //WebSQL databases do not need to be closed
     callback();
   };
 
   api._getAttachment = function (docId, attachId, attachment, opts, callback) {
-    // console.log('[pdb-index]_getAttachment');
     var res;
     var tx = opts.ctx;
     var digest = attachment.digest;
@@ -1136,7 +1042,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._getRevisionTree = function (docId, callback) {
-    // console.log('[pdb-index]_getRevisionTree');
     db.readTransaction(() => {
       var sql = 'SELECT json AS metadata FROM ' + DOC_STORE + ' WHERE id = ?';
       db.select(sql, [docId]).then((result) => {
@@ -1151,7 +1056,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._doCompaction = function (docId, revs, callback) {
-    // console.log('[pdb-index]_doCompaction');
     if (!revs.length) {
       return callback();
     }
@@ -1160,7 +1064,6 @@ function WebSqlPouch(opts, callback) {
       // update doc store
       var sql = 'SELECT json AS metadata FROM ' + DOC_STORE + ' WHERE id = ?';
       db.select(sql, [docId]).then((result) => {
-        // console.log('doCompaction[1153]', result);
         var metadata = safeJsonParse(result[0].metadata);
         traverseRevTree(metadata.rev_tree, function (isLeaf, pos,
                                                            revHash, ctx, opts) {
@@ -1183,7 +1086,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._getLocal = function (id, callback) {
-    // console.log('[pdb-index]_getLocal');
     db.readTransaction(() => {
       var sql = 'SELECT json, rev FROM ' + LOCAL_STORE + ' WHERE id=?';
       db.select(sql, [id]).then((res) => {
@@ -1199,7 +1101,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._putLocal = function (doc, opts, callback) {
-    // console.log('[pdb-index]_putLocal');
     if (typeof opts === 'function') {
       callback = opts;
       opts = {};
@@ -1217,7 +1118,6 @@ function WebSqlPouch(opts, callback) {
 
     var ret;
     function putLocal(db) {
-      // console.log("[pdb-index]", "putLocal" );
       var sql;
       var values;
       if (oldRev) {
@@ -1229,10 +1129,8 @@ function WebSqlPouch(opts, callback) {
         values = [id, newRev, json];
       }
       db.execute(sql, values).then((res) => {
-        // console.log('putlocal res', res);
         if (res) {
           ret = {ok: true, id: id, rev: newRev};
-          // console.log('[pdb-index]putLocal-Ret', ret);
           if (opts.ctx) { // return immediately
             callback(null, ret);
           }
@@ -1261,7 +1159,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._removeLocal = function (doc, opts, callback) {
-    // console.log('[pdb-index]_removeLocal');
     if (typeof opts === 'function') {
       callback = opts;
       opts = {};
@@ -1269,7 +1166,6 @@ function WebSqlPouch(opts, callback) {
     var ret;
 
     function removeLocal(tx) {
-      // console.log("[pdb-index]", "removeLocal" );
       var sql = 'DELETE FROM ' + LOCAL_STORE + ' WHERE id=? AND rev=?';
       var params = [doc._id, doc._rev];
       db.execute(sql, params).then((res) => {
@@ -1297,7 +1193,6 @@ function WebSqlPouch(opts, callback) {
   };
 
   api._destroy = function (opts, callback) {
-    // console.log('[pdb-index]_destroy');
     websqlChanges.removeAllListeners(api._name);
     db.transaction(() => {
       var stores = [DOC_STORE, BY_SEQ_STORE, ATTACH_STORE, META_STORE,
@@ -1310,7 +1205,6 @@ function WebSqlPouch(opts, callback) {
     .then(function () {
       if (hasLocalStorage()) {
         delete window.localStorage['_pouch__websqldb_' + api._name];
-        // console.log('[pdb-index]_name');
         delete window.localStorage[api._name];
       }
       callback(null, {'ok': true});

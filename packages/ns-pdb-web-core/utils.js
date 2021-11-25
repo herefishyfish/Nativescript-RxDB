@@ -14,7 +14,6 @@ import {
 // The goal is to never actually insert the \u0000 character
 // in the database.
 function escapeBlob(str) {
-  // console.log("[pdb-utils]","escapeBlob")
   /* eslint-disable no-control-regex */
   return str
     .replace(/\u0002/g, '\u0002\u0002')
@@ -24,7 +23,6 @@ function escapeBlob(str) {
 }
 
 function unescapeBlob(str) {
-  // console.log("[pdb-utils]","unescapeBlob")
   /* eslint-disable no-control-regex */
   return str
     .replace(/\u0001\u0001/g, '\u0000')
@@ -34,18 +32,15 @@ function unescapeBlob(str) {
 }
 
 function stringifyDoc(doc) {
-  // console.log("[pdb-utils]","stringifyDoc")
   // don't bother storing the id/rev. it uses lots of space,
   // in persistent map/reduce especially
   delete doc._id;
   delete doc._rev;
   const res = JSON.stringify(doc);
-  // console.log(res);
   return res;
 }
 
 function unstringifyDoc(doc, id, rev) {
-  // console.log("[pdb-utils]","unstringifyDoc")
   doc = JSON.parse(doc);
   doc._id = id;
   doc._rev = rev;
@@ -54,7 +49,6 @@ function unstringifyDoc(doc, id, rev) {
 
 // question mark groups IN queries, e.g. 3 -> '(?,?,?)'
 function qMarks(num) {
-  // console.log("[pdb-utils]","qMarks")
   var s = '(';
   while (num--) {
     s += '?';
@@ -66,9 +60,7 @@ function qMarks(num) {
 }
 
 function uuid() {
-  // console.log("[pdb-utils]","uuid")
   if( isAndroid ) {
-    // console.log('uuid');
     return java.util.UUID.randomUUID().toString();
   } else {
     return NSUUID.UUID().UUIDString.toLowerCase();
@@ -76,7 +68,6 @@ function uuid() {
 }
 
 function select(selector, table, joiner, where, orderBy) {
-  // console.log("[pdb-utils]","select")
   return 'SELECT ' + selector + ' FROM ' +
     (typeof table === 'string' ? table : table.join(' JOIN ')) +
     (joiner ? (' ON ' + joiner) : '') +
@@ -86,7 +77,6 @@ function select(selector, table, joiner, where, orderBy) {
 }
 
 function compactRevs(revs, docId, tx) {
-  // console.log("[pdb-utils]","compactRevs")
 
   if (!revs.length) {
     return;
@@ -185,7 +175,6 @@ function websqlError(callback) {
 }
 
 function getSize(opts) {
-  // console.log("[pdb-utils]","getSize")
   if ('size' in opts) {
     // triggers immediate popup in iOS, fixes #2347
     // e.g. 5000001 asks for 5 MB, 10000001 asks for 10 MB,
