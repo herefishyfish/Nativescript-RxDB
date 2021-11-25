@@ -20,6 +20,6 @@ export class ItemsComponent {
   }
 
   addHero() {
-    this.databaseService.db.hero.insert({ "id": this.uuid(), name: 'SPODERMEN', color: 'blue' } as any);
+    this.databaseService.db.hero.insert({ "id": this.uuid(), name: 'SPODERMEN', color: 'grey' } as any);
   }
 }

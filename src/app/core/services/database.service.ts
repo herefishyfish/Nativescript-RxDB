@@ -12,25 +12,12 @@ import { RxDBValidatePlugin } from 'rxdb/plugins/validate';
 export type RxHeroDocumentType = {
   name: string;
   color: string;
-  maxHP: number;
-  hp: number;
-  team?: string;
-  skills: Array<{
-    name?: string;
-    damage?: number;
-  }>;
 };
 
-// ORM methods
-type RxHeroDocMethods = {
-  hpPercent(): number;
-};
-
-export type RxHeroDocument = RxDocument<RxHeroDocumentType, RxHeroDocMethods>;
+export type RxHeroDocument = RxDocument<RxHeroDocumentType>;
 
 export type RxHeroCollection = RxCollection<
   RxHeroDocumentType,
-  RxHeroDocMethods,
   {}
 >;
 
@@ -94,20 +81,11 @@ export const graphQLGenerationInput = {
     schema: heroSchema,
     feedKeys: ['id', 'updatedAt'],
     deletedFlag: 'deleted',
+    sync: true,
   },
 };
 
 const batchSize = 5;
-
-const pullQueryBuilder = pullQueryBuilderFromRxSchema(
-  'hero',
-  graphQLGenerationInput.hero,
-  batchSize
-);
-const pushQueryBuilder = pushQueryBuilderFromRxSchema(
-  'hero',
-  graphQLGenerationInput.hero
-);
 
 export const getPushQuery = () => {
   console.log('push');
@@ -153,12 +131,13 @@ export const getPullQuery = () => {
     console.log('sortByValue', sortByValue);
     // where: {updatedAt: {_gt: "${sortByValue}"}},
     const query = `{
-                  hero(
-                    order_by: {updatedAt: asc}
-                    ){
-                      id name color updatedAt
-                    }
-                  }`;
+      hero(
+        where: {updatedAt: {_gt: "${sortByValue}"}},
+        order_by: {updatedAt: asc}
+        ){
+          id name color updatedAt
+        }
+      }`;
 
     console.log(query);
     return {
@@ -253,10 +232,6 @@ async function _create(): Promise<RxHeroesDatabase> {
     },
     pull: {
       queryBuilder: getPullQuery(),
-      modifier: (doc) => {
-        console.log('pull query', doc);
-        return doc;
-      }
     },
     live: true,
     /**
@@ -264,7 +239,7 @@ async function _create(): Promise<RxHeroesDatabase> {
      * when something has changed,
      * we can set the liveIntervall to a high value
      */
-    liveInterval: 1000 * 30 * 1, // 10 minutes
+    liveInterval: 1000 * 60 * 1, // 1 minutes
     deletedFlag: 'deleted',
   });
   // show replication-errors in logs
@@ -316,6 +291,7 @@ export async function initDatabase() {
 
 @Injectable()
 export class DatabaseService implements OnInit {
+  repl_ = replicationState;
   constructor(private subscriptionService: SubscriptionService, private zone: NgZone) {
     sub = subscriptionService;
   }
@@ -359,22 +335,21 @@ export class DatabaseService implements OnInit {
     `;
 
     console.log('Database service: request subscription.');
-    this.zone.runOutsideAngular(() => {
     const ret = wsClient.request({
       query,
     });
     ret.subscribe({
       next: async (data) => {
+        this.zone.runOutsideAngular(() => {
         console.log('subscription emitted => trigger run()');
         console.dir(data);
-        await replicationState.run(true);
-          // console.log('run() done');
+        replicationState.run(true);
+        });
         },
         error(error) {
           console.log('run() got error:');
           console.dir(error);
         },
       });
-    });
   }
 }
