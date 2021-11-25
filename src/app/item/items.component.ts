@@ -22,6 +22,6 @@ export class ItemsComponent {
   addHero() {
     Dialogs.prompt('Enter hero name', 'SPODERMEN').then((name) => {
       this.databaseService.db.hero.insert({ "id": this.uuid(), name: name.text, color: '#' + Math.floor(Math.random()*16777215).toString(16) } as any);
-    })
+    });
   }
 }

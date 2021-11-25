@@ -61,11 +61,12 @@ export const heroSchema = {
       type: "string",
     },
     updatedAt: {
-      type: "number",
+      type: "string",
     },
   },
   indexes: ["name", "color", "updatedAt"],
   required: ["id", "color"],
+
 };
 
 export const graphQLGenerationInput = {
@@ -73,7 +74,6 @@ export const graphQLGenerationInput = {
     schema: heroSchema,
     feedKeys: ["id", "updatedAt"],
     deletedFlag: "deleted",
-    sync: true,
   },
 };
 
@@ -124,7 +124,7 @@ export const getPullQuery = () => {
         where: {updatedAt: {_gt: "${sortByValue}"}},
         order_by: {updatedAt: asc}
         ){
-          id name color updatedAt
+          id name color updatedAt deleted
         }
       }`;
 
@@ -220,11 +220,61 @@ async function _create(): Promise<RxHeroesDatabase> {
     console.log("Received:", doc);
   });
 
-  // log all collection events for debugging
-  db.hero.$.pipe(filter((ev: any) => !ev.isLocal)).subscribe((ev) => {
-    console.log("colection.$ emitted:");
-    console.dir(ev);
+  // replicationState.runPull();
+  console.log("Database service: Create websocket");
+
+  const endpointUrl = "wss://" + hasuraProject;
+  const wsClient = sub.getWSClient(
+    endpointUrl,
+    {
+      lazy: true,
+      reconnect: true,
+      connectionParams: async () => {
+        return {
+          headers: {
+            "x-hasura-admin-secret":
+              "2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE",
+          },
+        };
+      },
+      reconnectionAttempts: 999,
+    },
+    WebSocket
+  ) as any;
+
+  const query = `
+  subscription HeroSubscription {
+    hero {
+      name
+      id
+      updatedAt
+      deleted
+      color
+    }
+  }
+  `;
+
+  console.log("Database service: request subscription.");
+
+  const ret = wsClient.request({
+    query,
   });
+  ret.subscribe({
+    next: async (data) => {
+      console.log("subscription emitted => trigger run()");
+      console.dir(data);
+      replicationState.run(true);
+    },
+    error(error) {
+      console.log("run() got error:");
+      console.dir(error);
+    },
+  });
+  // log all collection events for debugging
+  // db.hero.$.pipe(filter((ev: any) => !ev.isLocal)).subscribe((ev) => {
+  //   console.log("colection.$ emitted:");
+  //   console.dir(ev);
+  // });
 
   console.log("DatabaseService: created");
 
@@ -266,56 +316,11 @@ export class DatabaseService implements OnInit {
   }
 
   ngOnInit() {
-    const endpointUrl = "wss://" + hasuraProject;
-    console.log(endpointUrl);
-    console.log("Database service: Create websocket");
-    this.zone.run(() => {
 
-      const wsClient = this.subscriptionService.getWSClient(
-        endpointUrl,
-        {
-          lazy: true,
-          reconnect: true,
-          connectionParams: async () => {
-            return {
-              headers: {
-                "x-hasura-admin-secret":
-                  "2zWIdFAkt9O9OGnxqXTkPw14xkQC0jVCSWKRf9hB7OAkrlzz1l8idW9w7SfUPkZE",
-              },
-            };
-          },
-          reconnectionAttempts: 999,
-        },
-        WebSocket
-      ) as any;
+    // console.log(endpointUrl);
+    // this.zone.run(() => {
 
-      const query = `
-      subscription HeroSubscription {
-        hero {
-          name
-          id
-          updatedAt
-          deleted
-          color
-        }
-      }
-      `;
 
-      console.log("Database service: request subscription.");
-      const ret = wsClient.request({
-        query,
-      });
-      ret.subscribe({
-        next: async (data) => {
-          console.log("subscription emitted => trigger run()");
-          console.dir(data);
-          replicationState.run(true);
-        },
-        error(error) {
-          console.log("run() got error:");
-          console.dir(error);
-        },
-      });
-    })
+    // })
   }
 }
