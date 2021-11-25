@@ -94,7 +94,7 @@ export const getPushQuery = () => {
           on_conflict: {
             constraint: hero_pkey,
             update_columns: [
-              name, color, updatedAt
+              name, color
             ]
         }){
           returning {
@@ -203,7 +203,7 @@ async function _create(): Promise<RxHeroesDatabase> {
      * when something has changed,
      * we can set the liveIntervall to a high value
      */
-    liveInterval: 1000 * 60 * 1, // 1 minutes
+    liveInterval: 1000 * 60 * .1, // 1 minutes
     deletedFlag: "deleted",
   });
   // show replication-errors in logs
@@ -263,7 +263,11 @@ async function _create(): Promise<RxHeroesDatabase> {
     next: async (data) => {
       console.log("subscription emitted => trigger run()");
       console.dir(data);
-      replicationState.run(true);
+      // await replicationState.run(true);
+      await replicationState.runPull();
+      // CRASHING HERE:
+      await replicationState.runPush();
+      console.log('Ran replicator...');
     },
     error(error) {
       console.log("run() got error:");
@@ -302,25 +306,16 @@ export async function initDatabase() {
 }
 
 @Injectable()
-export class DatabaseService implements OnInit {
+export class DatabaseService {
   repl_ = replicationState;
   constructor(
     private subscriptionService: SubscriptionService,
-    private zone: NgZone
   ) {
-    sub = subscriptionService;
+    sub = this.subscriptionService;
   }
 
   get db(): RxHeroesDatabase {
     return DB_INSTANCE;
   }
 
-  ngOnInit() {
-
-    // console.log(endpointUrl);
-    // this.zone.run(() => {
-
-
-    // })
-  }
 }
