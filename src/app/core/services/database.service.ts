@@ -1,4 +1,4 @@
-import { Injectable, isDevMode, NgZone, OnInit } from '@angular/core';
+import { Injectable, NgZone, OnInit } from '@angular/core';
 
 // import typings
 /**
@@ -37,7 +37,6 @@ import { createRxDatabase, addRxPlugin } from 'rxdb/plugins/core';
 
 import { addPouchPlugin, getRxStoragePouch } from 'rxdb/plugins/pouchdb';
 
-import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump';
 import { RxDBLocalDocumentsPlugin } from 'rxdb/plugins/local-documents';
 
 import { createPlugin } from '../../../../packages/ns-pdb-adapter';
@@ -48,8 +47,6 @@ import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
 import { filter } from 'rxjs/operators';
 
 import {
-  pullQueryBuilderFromRxSchema,
-  pushQueryBuilderFromRxSchema,
   RxDBReplicationGraphQLPlugin,
 } from 'rxdb/plugins/replication-graphql';
 import { SubscriptionService } from './subscription.service';
@@ -162,32 +159,7 @@ async function loadRxDBPlugins(): Promise<void> {
   addRxPlugin(RxDBReplicationGraphQLPlugin);
   addRxPlugin(RxDBLocalDocumentsPlugin);
   addRxPlugin(RxDBValidatePlugin);
-  addRxPlugin(RxDBJsonDumpPlugin);
   addRxPlugin(RxDBDevModePlugin);
-  /**
-   * to reduce the build-size,
-   * we use some modules in dev-mode only
-   */
-  // if (isDevMode()) {
-  // await Promise.all([
-
-  //     // add dev-mode plugin
-  //     // which does many checks and add full error-messages
-  //     import('rxdb/plugins/dev-mode').then(
-  //         module => addRxPlugin(module as any)
-  //     ),
-
-  //     // we use the schema-validation only in dev-mode
-  //     // this validates each document if it is matching the jsonschema
-  //     import('rxdb/plugins/validate').then(
-  //         module => addRxPlugin(module as any)
-  //     )
-  // ]);
-  // } else {
-  // in production we use the no-validate module instead of the schema-validation
-  // to reduce the build-size
-  // addRxPlugin(RxDBNoValidatePlugin);
-  // }
 }
 
 /**
