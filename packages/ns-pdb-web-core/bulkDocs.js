@@ -158,16 +158,13 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
         }
       }
 
-      db.execute(sql, sqlArgs).then(db.select("SELECT last_insert_rowid()")).then((res) => {
+      db.execute(sql, sqlArgs).then(db.select("SELECT last_insert_rowid()").then((res) => {
+        var seq = res[0]["last_insert_rowid()"];
 
-        var seq = result[0]["last_insert_rowid()"];
-
-        // var seq = result;
-
-        insertAttachmentMappings(seq, function () {
+        insertAttachmentMappings(seq, () => {
           dataWritten(db, seq);
         });
-      }).catch(() => {
+      })).catch(() => {
         var fetchSql = select('seq', BY_SEQ_STORE, null,
           'doc_id=? AND rev=?');
         db.select(fetchSql, [id, rev]).then((res) => {
@@ -257,7 +254,6 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
       var params = isUpdate ?
         [metadataStr, seq, winningRev, id] :
         [id, seq, seq, metadataStr];
-
 
       db.execute(sql, params).then(() => {
         results[resultsIdx] = {
