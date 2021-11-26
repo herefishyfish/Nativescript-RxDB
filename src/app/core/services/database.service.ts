@@ -220,7 +220,8 @@ async function _create(): Promise<RxHeroesDatabase> {
     console.log("Received:", doc);
   });
 
-  // replicationState.runPull();
+  // Initial pull: sometimes the websocket takes a while to startup...
+  replicationState.runPull();
   console.log("Database service: Create websocket");
 
   const endpointUrl = "wss://" + hasuraProject;

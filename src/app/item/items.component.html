@@ -1,8 +1,9 @@
-<ActionBar title="RxDB Test"> </ActionBar>
+<ActionBar title="RxDB Test"></ActionBar>
 
 <ScrollView>
 
   <StackLayout>
+
     <Button text="add hero" backgroundColor="#FC22EE" (tap)="addHero()"></Button>
 
     <ng-container
@@ -11,7 +12,6 @@
       >
       <StackLayout orientation="horizontal">
         <StackLayout width="16" height="16" [backgroundColor]="hero.color">
-
         </StackLayout>
         <Label text="[{{idx+1}}] {{ hero.name }} {{ hero.id }}"></Label>
       </StackLayout>

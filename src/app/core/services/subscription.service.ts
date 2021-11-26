@@ -26,7 +26,6 @@ const WebSocket = require('@master.technology/websockets');
 @Injectable()
 export class SubscriptionService {
     private wsc: SubscriptionClient;
-    // public wsl: WebSocketLink;
     ws: WebSocket
     status$: BehaviorSubject<SocketStatus> = new BehaviorSubject<SocketStatus>(null);
     status;
