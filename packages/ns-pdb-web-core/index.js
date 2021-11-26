@@ -575,11 +575,11 @@ function WebSqlPouch(opts, callback) {
     var seq;
     var docCount;
     // try {
-      db.readTransaction( async () => {
-        await getMaxSeq(db, function (theSeq) {
+      db.readTransaction(() => {
+        getMaxSeq(db, function (theSeq) {
           seq = theSeq;
         });
-        await countDocs(db, (theDocCount) => {
+        countDocs(db, (theDocCount) => {
           docCount = theDocCount;
         });
       })

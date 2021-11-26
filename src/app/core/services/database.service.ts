@@ -80,21 +80,19 @@ export const graphQLGenerationInput = {
 const batchSize = 5;
 
 export const getPushQuery = () => {
-  console.log("push");
-  const inputName = `[hero_insert_input!]!`;
   return (doc) => {
     // remove rxdb columns before push
     delete doc._deleted;
     delete doc._attachments;
     delete doc._rev;
     const query = `mutation
-      hero ($doc: ${inputName}) {
+      hero ($doc: [hero_insert_input!]!) {
         insert_hero(
           objects: $doc,
           on_conflict: {
             constraint: hero_pkey,
             update_columns: [
-              name, color
+              name, color, deleted, updatedAt
             ]
         }){
           returning {
@@ -203,7 +201,7 @@ async function _create(): Promise<RxHeroesDatabase> {
      * when something has changed,
      * we can set the liveIntervall to a high value
      */
-    liveInterval: 1000 * 60 * .1, // 1 minutes
+    liveInterval: 1000 * 60 * 1, // 1 minutes
     deletedFlag: "deleted",
   });
   // show replication-errors in logs
@@ -263,11 +261,24 @@ async function _create(): Promise<RxHeroesDatabase> {
   ret.subscribe({
     next: async (data) => {
       console.log("subscription emitted => trigger run()");
-      console.dir(data);
-      // await replicationState.run(true);
-      await replicationState.runPull();
-      // CRASHING HERE:
-      await replicationState.runPush();
+      /**
+       * This is really scuffed an only submits data if websocket recieves data..
+       * The standard timed push isn't working, this is..
+       * The standard push also works on init...
+       * TODO:
+       *  - Get standard push's going.
+       *  - Figure out what's causing these functions to fail. "Unhandled Promise rejection: 409"
+       *    (It's most likely the root cause of the issues.)
+       *  - Get replicationState.run() to handle update events. (AFAIK it should handle changes better)
+       */
+
+      // replicationState.run(true);
+      setTimeout(() => {
+        replicationState.runPull();
+      }, 0);
+      setTimeout(() => {
+        replicationState.runPush();
+      }, 0);
       console.log('Ran replicator...');
     },
     error(error) {
@@ -295,10 +306,6 @@ let sub = null;
  * to ensure the database exists before the angular-app starts up
  */
 export async function initDatabase() {
-  /**
-   * When server side rendering is used,
-   * The database might already be there
-   */
   if (!initState) {
     console.log("initDatabase()");
     initState = _create().then((db) => (DB_INSTANCE = db));
@@ -318,5 +325,4 @@ export class DatabaseService {
   get db(): RxHeroesDatabase {
     return DB_INSTANCE;
   }
-
 }
