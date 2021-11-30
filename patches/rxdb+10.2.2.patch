@@ -1,0 +1,15 @@
+diff --git a/node_modules/rxdb/dist/es/plugins/pouchdb/rx-storage-pouchdb.js b/node_modules/rxdb/dist/es/plugins/pouchdb/rx-storage-pouchdb.js
+index dc1f939..3170180 100644
+--- a/node_modules/rxdb/dist/es/plugins/pouchdb/rx-storage-pouchdb.js
++++ b/node_modules/rxdb/dist/es/plugins/pouchdb/rx-storage-pouchdb.js
+@@ -129,7 +129,9 @@ export var RxStorageKeyObjectInstancePouch = /*#__PURE__*/function () {
+                     documentId: resultRow.id,
+                     writeRow: writeRow
+                   };
+-                  ret.error.set(resultRow.id, err);
++                  setTimeout(() => {
++                    ret.error.set(resultRow.id, err);
++                  }, 0);
+                 } else {
+                   var pushObj = flatClone(writeRow.document);
+                   pushObj._rev = resultRow.rev; // local document cannot have attachments

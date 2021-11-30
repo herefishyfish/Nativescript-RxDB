@@ -1,8 +1,11 @@
 {
   "name": "nsrxdb",
   "main": "./src/main.ts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
+  "scripts": {
+    "postinstall": "patch-package"
+  },
   "dependencies": {
     "@angular/animations": "^12.2.0",
     "@angular/common": "^12.2.0",
@@ -32,6 +35,7 @@
     "nativescript-md5": "^1.0.1",
     "net": "^1.0.2",
     "os-browserify": "^0.3.0",
+    "patch-package": "^6.4.7",
     "pouchdb-adapter-http": "^7.2.2",
     "pouchdb-adapter-react-native-sqlite": "^3.0.1",
     "pouchdb-mapreduce": "^7.2.2",

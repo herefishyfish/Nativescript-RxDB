@@ -828,7 +828,6 @@ function WebSqlPouch(opts, callback) {
       }
 
       function processResult(rows) {
-
         for (var i = 0, l = rows.length; i < l; i++) {
           var item = rows[i];
           var metadata = safeJsonParse(item.metadata);

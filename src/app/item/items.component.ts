@@ -35,4 +35,27 @@ export class ItemsComponent {
       }
     });
   }
+
+  editHero(hero) {
+    Dialogs.prompt("Enter hero name", hero?.name).then((response) => {
+      if (response.result) {
+        // Alternative
+        // hero.update({
+        //   $set: {
+        //     name: response.text,
+        //   }
+        // } as any);
+        this.databaseService.db.hero.upsert({
+          id: hero.id,
+          name: response.text,
+          color: hero.color,
+        } as any);
+      }
+    });
+  }
+
+  removeHero(hero) {
+    console.log('Removing: ', hero.name);
+    hero.remove();
+  }
 }

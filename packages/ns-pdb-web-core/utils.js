@@ -162,7 +162,7 @@ function compactRevs(revs, docId, tx) {
 }
 
 function websqlError(callback) {
-  console.log('ERROR:', callback);
+  // console.log('ERROR:', callback);
   return function (event) {
     console.log('error', 'WebSQL threw an error', event);
     // event may actually be a SQLError object, so report is as such

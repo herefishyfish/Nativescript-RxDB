@@ -40,6 +40,7 @@ import { createPlugin } from "../../../../packages/ns-pdb-adapter";
 import mapreduce from "pouchdb-mapreduce";
 import HttpPouch from "pouchdb-adapter-http";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
+import { RxDBUpdatePlugin } from "rxdb/plugins/update";
 
 import { filter } from "rxjs/operators";
 
@@ -63,18 +64,12 @@ export const heroSchema = {
     updatedAt: {
       type: "string",
     },
+    createdAt: {
+      type: "string",
+    },
   },
-  indexes: ["name", "color", "updatedAt"],
+  indexes: ["name", "color", "updatedAt", "createdAt"],
   required: ["id", "color"],
-
-};
-
-export const graphQLGenerationInput = {
-  hero: {
-    schema: heroSchema,
-    feedKeys: ["id", "updatedAt"],
-    deletedFlag: "deleted",
-  },
 };
 
 const batchSize = 5;
@@ -82,6 +77,7 @@ const batchSize = 5;
 export const getPushQuery = () => {
   return (doc) => {
     // remove rxdb columns before push
+    doc['deleted'] = doc._deleted;
     delete doc._deleted;
     delete doc._attachments;
     delete doc._rev;
@@ -92,7 +88,7 @@ export const getPushQuery = () => {
           on_conflict: {
             constraint: hero_pkey,
             update_columns: [
-              name, color, deleted, updatedAt
+              name, color, deleted, updatedAt, createdAt
             ]
         }){
           returning {
@@ -122,7 +118,7 @@ export const getPullQuery = () => {
         where: {updatedAt: {_gt: "${sortByValue}"}},
         order_by: {updatedAt: asc}
         ){
-          id name color updatedAt deleted
+          id name color updatedAt createdAt deleted
         }
       }`;
 
@@ -146,6 +142,7 @@ async function loadRxDBPlugins(): Promise<void> {
   addPouchPlugin(HttpPouch);
   addPouchPlugin(SQLiteAdapter);
   addPouchPlugin(mapreduce);
+  addRxPlugin(RxDBUpdatePlugin);
   addRxPlugin(RxDBReplicationGraphQLPlugin);
   addRxPlugin(RxDBLocalDocumentsPlugin);
   addRxPlugin(RxDBValidatePlugin);
@@ -160,7 +157,7 @@ async function _create(): Promise<RxHeroesDatabase> {
 
   console.log("DatabaseService: creating database..");
   const db = await createRxDatabase<RxHeroesCollections>({
-    name: "nssqlite",
+    name: "nssqlitehero",
     storage: getRxStoragePouch("nativescript-sqlite"),
     multiInstance: false,
   });
@@ -199,9 +196,9 @@ async function _create(): Promise<RxHeroesDatabase> {
     /**
      * Because the websocket is used to inform the client
      * when something has changed,
-     * we can set the liveIntervall to a high value
+     * we can set the liveInterval to a high value
      */
-    liveInterval: 1000 * 60 * 1, // 1 minutes
+    liveInterval: 1000 * 60 * 10, // 10 minutes
     deletedFlag: "deleted",
   });
   // show replication-errors in logs
@@ -219,7 +216,9 @@ async function _create(): Promise<RxHeroesDatabase> {
   });
 
   // Initial pull: sometimes the websocket takes a while to startup...
-  replicationState.runPull();
+  replicationState.run(true);
+  // replicationState.runPull();
+
   console.log("Database service: Create websocket");
 
   const endpointUrl = "wss://" + hasuraProject;
@@ -247,6 +246,7 @@ async function _create(): Promise<RxHeroesDatabase> {
       name
       id
       updatedAt
+      createdAt
       deleted
       color
     }
@@ -261,25 +261,8 @@ async function _create(): Promise<RxHeroesDatabase> {
   ret.subscribe({
     next: async (data) => {
       console.log("subscription emitted => trigger run()");
-      /**
-       * This is really scuffed an only submits data if websocket recieves data..
-       * The standard timed push isn't working, this is..
-       * The standard push also works on init...
-       * TODO:
-       *  - Get standard push's going.
-       *  - Figure out what's causing these functions to fail. "Unhandled Promise rejection: 409"
-       *    (It's most likely the root cause of the issues.)
-       *  - Get replicationState.run() to handle update events. (AFAIK it should handle changes better)
-       */
-
-      // replicationState.run(true);
-      setTimeout(() => {
-        replicationState.runPull();
-      }, 0);
-      setTimeout(() => {
-        replicationState.runPush();
-      }, 0);
-      console.log('Ran replicator...');
+      await replicationState.run(true);
+      console.log("Ran replicator...");
     },
     error(error) {
       console.log("run() got error:");
@@ -315,10 +298,7 @@ export async function initDatabase() {
 
 @Injectable()
 export class DatabaseService {
-  repl_ = replicationState;
-  constructor(
-    private subscriptionService: SubscriptionService,
-  ) {
+  constructor(private subscriptionService: SubscriptionService) {
     sub = this.subscriptionService;
   }
 

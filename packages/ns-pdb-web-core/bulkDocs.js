@@ -188,7 +188,9 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
           err = attachmentErr;
           callback(err);
         } else if (recv === attachments.length) {
-          finish();
+          setTimeout(() => {
+            finish();
+          }, 0);
         }
       }
     }
