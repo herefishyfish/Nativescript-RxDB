@@ -10,8 +10,10 @@ import type { RxDocument, RxCollection, RxDatabase } from "rxdb/plugins/core";
 import { RxDBValidatePlugin } from "rxdb/plugins/validate";
 
 export type RxHeroDocumentType = {
+  id: string;
   name: string;
   color: string;
+  deleted: boolean;
 };
 
 export type RxHeroDocument = RxDocument<RxHeroDocumentType>;
@@ -110,7 +112,7 @@ export const getPushQuery = () => {
 
 export const getPullQuery = () => {
   const queryBuilder = (doc) => {
-    console.log("pull request");
+    console.log('Manually syncing @', new Date().toISOString());
     // the first pull does not have a start-document
     const sortByValue = doc ? doc["updatedAt"] : new Date(0).toISOString();
     const query = `{
@@ -122,7 +124,6 @@ export const getPullQuery = () => {
         }
       }`;
 
-    console.log(query);
     return {
       query,
       variables: {},

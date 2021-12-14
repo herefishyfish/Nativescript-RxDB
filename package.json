@@ -1,7 +1,7 @@
 {
   "name": "nsrxdb",
   "main": "./src/main.ts",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "scripts": {
     "postinstall": "patch-package"

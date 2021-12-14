@@ -18,7 +18,7 @@ import 'zone.js';
 
 import './zone-disable';
 
-import 'zone.js/plugins/zone-patch-rxjs';
+// import 'zone.js/plugins/zone-patch-rxjs';
 
 // Add NativeScript specific Zone JS patches
 import '@nativescript/zone-js';

@@ -327,19 +327,19 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     if (err) {
       return callback(err);
     }
-    db.transaction(() => {
+    //db.transaction(() => {
       verifyAttachments(function (err) {
         if (err) {
           preconditionErrored = err;
         } else {
           fetchExistingDocs(websqlProcessDocs);
         }
+        complete();
       });
-    })
+    //})
     // .catch((err) => websqlError(callback))
-    .then(() => {
-      complete();
-    });
+    //.then(() => {
+    //});
   });
 }
 
