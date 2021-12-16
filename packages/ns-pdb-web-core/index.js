@@ -148,7 +148,11 @@ function WebSqlPouch(opts, callback) {
   var db = openDBResult.db;
   if (typeof db.readTransaction !== 'function') {
     // doesn't exist in sqlite plugin
-    db.readTransaction = db.transaction;
+    // nested transactions don't work in iOS, really not required.
+    const fn = async (callback) => {
+      return await callback();
+    }
+    db.readTransaction = fn;
   }
 
   function dbCreated() {

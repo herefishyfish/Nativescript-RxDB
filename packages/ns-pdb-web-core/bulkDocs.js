@@ -327,7 +327,7 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
     if (err) {
       return callback(err);
     }
-    //db.transaction(() => {
+    // db.transaction(() => {
       verifyAttachments(function (err) {
         if (err) {
           preconditionErrored = err;
@@ -336,10 +336,10 @@ function websqlBulkDocs(dbOpts, req, opts, api, db, websqlChanges, callback) {
         }
         complete();
       });
-    //})
+    // })
     // .catch((err) => websqlError(callback))
-    //.then(() => {
-    //});
+    // .then(() => {
+    // });
   });
 }
 
