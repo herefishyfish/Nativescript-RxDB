@@ -1,5 +1,11 @@
 import { Component } from "@angular/core";
 import { Dialogs, isAndroid } from "@nativescript/core";
+
+import { RxDocument } from "rxdb";
+import { Observable } from "rxjs";
+
+import { RxHeroDocument } from "../RxDB";
+
 import {
   DatabaseService,
   initDatabase,
@@ -10,8 +16,12 @@ import {
   templateUrl: "./items.component.html",
 })
 export class ItemsComponent {
-  constructor(public databaseService: DatabaseService) {
-    initDatabase();
+  public heroes$: Observable<RxHeroDocument[]>;
+
+  constructor(public databaseService: DatabaseService) {}
+
+  async ngOnInit() {
+    await initDatabase();
   }
 
   uuid() {
@@ -31,12 +41,14 @@ export class ItemsComponent {
           color:
             "#" +
             (0x1000000 + Math.random() * 0xffffff).toString(16).substr(1, 6),
-        } as any);
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       }
     });
   }
 
-  editHero(hero) {
+  editHero(hero: RxDocument<RxHeroDocument>) {
     Dialogs.prompt("Enter hero name", hero?.name).then((response) => {
       if (response.result) {
         // Alternative
@@ -49,13 +61,14 @@ export class ItemsComponent {
           id: hero.id,
           name: response.text,
           color: hero.color,
-        } as any);
+          updatedAt: new Date().toISOString(),
+        });
       }
     });
   }
 
-  removeHero(hero) {
-    console.log('Removing: ', hero.name);
-    hero.remove();
+  removeHero(hero: RxDocument<RxHeroDocument>) {
+    console.log("Removing: ", hero.name);
+    hero.remove().catch((e) => console.log(e));
   }
 }

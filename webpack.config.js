@@ -14,9 +14,8 @@ module.exports = (env) => {
       'fallback',
       webpack.Utils.merge(fallback || {}, {
         timers: require.resolve('@nativescript/core/'),
-        fs: require.resolve('@nativescript/core/'),
         module: require.resolve('@nativescript/core/'),
-        path: require.resolve('@nativescript/core/'),
+        path: require.resolve('path-browserify'),
         assert: require.resolve("browser-assert"),
         buffer: require.resolve("buffer/"),
         events: require.resolve("events/"),
@@ -42,6 +41,27 @@ module.exports = (env) => {
       'pouchdb-md5',
       path.resolve(__dirname, './packages/pouchdb-md5')
     );
+
+    config.resolve.alias.set(
+      'fs',
+      path.resolve(__dirname, './packages/ns-node/fs')
+    );
+
+    config.resolve.alias.set(
+      'nano-time',
+      path.resolve(__dirname, './packages/nano-time')
+    );
+
+    config.resolve.alias.set(
+      'file-system/file-system',
+      '@nativescript/core/file-system'
+    );
+
+    config.resolve.alias.set(
+      'file-system/file-system-access',
+      '@nativescript/core/file-system/file-system-access'
+    );
+
     // config.resolve.alias.set(
     //   'pouchdb-binary-utils',
     //   '@craftzdog/pouchdb-binary-utils-react-native'
