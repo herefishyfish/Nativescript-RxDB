@@ -38,7 +38,7 @@
     "pouchdb-adapter-react-native-sqlite": "^3.0.1",
     "pouchdb-mapreduce": "^7.3.0",
     "process": "^0.11.10",
-    "rxdb": "^13.0.0-beta.30",
+    "rxdb": "^13.0.0",
     "rxjs": "^7.5.5",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
